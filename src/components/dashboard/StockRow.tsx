@@ -9,6 +9,7 @@ interface StockRowProps {
   stock: Stock;
   isInWatchlist: boolean;
   onToggleWatchlist: (symbol: string) => void;
+  onRowClick: (stock: Stock) => void;
   animationDelay?: number;
 }
 
@@ -16,17 +17,21 @@ export const StockRow = memo(function StockRow({
   stock,
   isInWatchlist,
   onToggleWatchlist,
+  onRowClick,
   animationDelay = 0,
 }: StockRowProps) {
-  const [isHovered, setIsHovered] = useState(false);
   const isPositive = stock.pChange >= 0;
+
+  const handleWatchlistClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onToggleWatchlist(stock.symbol);
+  };
 
   return (
     <tr
-      className="table-row-hover border-b border-border/30 fade-in"
+      className="table-row-hover border-b border-border/30 fade-in cursor-pointer"
       style={{ animationDelay: `${animationDelay}ms` }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onClick={() => onRowClick(stock)}
     >
       {/* Watchlist Toggle */}
       <td className="py-3 px-4">
@@ -34,7 +39,7 @@ export const StockRow = memo(function StockRow({
           variant="ghost"
           size="icon"
           className="h-8 w-8"
-          onClick={() => onToggleWatchlist(stock.symbol)}
+          onClick={handleWatchlistClick}
         >
           <Star
             className={cn(

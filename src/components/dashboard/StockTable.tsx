@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import { StockRow } from './StockRow';
 import { StockTableSkeleton } from './StockTableSkeleton';
 import { Stock, SortOption, TabType } from '@/types/stock';
-import { cn } from '@/lib/utils';
 
 interface StockTableProps {
   stocks: Stock[];
@@ -12,6 +11,7 @@ interface StockTableProps {
   activeTab: TabType;
   watchlist: string[];
   onToggleWatchlist: (symbol: string) => void;
+  onRowClick: (stock: Stock) => void;
 }
 
 export function StockTable({
@@ -22,6 +22,7 @@ export function StockTable({
   activeTab,
   watchlist,
   onToggleWatchlist,
+  onRowClick,
 }: StockTableProps) {
   const filteredAndSortedStocks = useMemo(() => {
     let result = [...stocks];
@@ -113,6 +114,7 @@ export function StockTable({
               stock={stock}
               isInWatchlist={watchlist.includes(stock.symbol)}
               onToggleWatchlist={onToggleWatchlist}
+              onRowClick={onRowClick}
               animationDelay={index * 20}
             />
           ))}

@@ -30,6 +30,7 @@ import {
 } from 'recharts';
 import { Stock } from '@/types/stock';
 import { cn } from '@/lib/utils';
+import { AIPredictionCard } from './AIPredictionCard';
 
 interface StockDetailModalProps {
   stock: Stock | null;
@@ -266,6 +267,9 @@ export function StockDetailModal({
             </p>
           </div>
         </div>
+
+        {/* AI Price Prediction */}
+        <AIPredictionCard stock={stock} />
       </DialogContent>
     </Dialog>
   );

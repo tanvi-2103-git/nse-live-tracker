@@ -14,7 +14,177 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ai_predictions: {
+        Row: {
+          confidence_percent: number | null
+          created_at: string
+          disclaimer: string | null
+          id: string
+          near_term: string | null
+          prediction_text: string | null
+          reasoning: string | null
+          short_term: string | null
+          suggested_resistance: number | null
+          suggested_support: number | null
+          symbol: string
+          trend: string | null
+          user_id: string
+        }
+        Insert: {
+          confidence_percent?: number | null
+          created_at?: string
+          disclaimer?: string | null
+          id?: string
+          near_term?: string | null
+          prediction_text?: string | null
+          reasoning?: string | null
+          short_term?: string | null
+          suggested_resistance?: number | null
+          suggested_support?: number | null
+          symbol: string
+          trend?: string | null
+          user_id: string
+        }
+        Update: {
+          confidence_percent?: number | null
+          created_at?: string
+          disclaimer?: string | null
+          id?: string
+          near_term?: string | null
+          prediction_text?: string | null
+          reasoning?: string | null
+          short_term?: string | null
+          suggested_resistance?: number | null
+          suggested_support?: number | null
+          symbol?: string
+          trend?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      portfolio: {
+        Row: {
+          buy_date: string
+          buy_price: number
+          company_name: string
+          created_at: string
+          id: string
+          notes: string | null
+          quantity: number
+          symbol: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          buy_date?: string
+          buy_price: number
+          company_name: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          quantity: number
+          symbol: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          buy_date?: string
+          buy_price?: number
+          company_name?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          quantity?: number
+          symbol?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      price_alerts: {
+        Row: {
+          company_name: string
+          condition: string
+          created_at: string
+          id: string
+          is_active: boolean
+          symbol: string
+          target_price: number
+          triggered_at: string | null
+          user_id: string
+        }
+        Insert: {
+          company_name: string
+          condition: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          symbol: string
+          target_price: number
+          triggered_at?: string | null
+          user_id: string
+        }
+        Update: {
+          company_name?: string
+          condition?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          symbol?: string
+          target_price?: number
+          triggered_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      watchlist: {
+        Row: {
+          created_at: string
+          id: string
+          symbol: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          symbol: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          symbol?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

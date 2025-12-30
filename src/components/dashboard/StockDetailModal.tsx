@@ -52,12 +52,11 @@ export function StockDetailModal({
 }: StockDetailModalProps) {
   const [chartMode, setChartMode] = useState<ChartMode>('intraday');
   const [showCandlestick, setShowCandlestick] = useState(false);
-  if (!stock) return null;
 
-  const isPositive = stock.pChange >= 0;
-
-  // Generate detailed intraday chart data
+  // Generate detailed intraday chart data - always call hook, guard inside
   const chartData = useMemo(() => {
+    if (!stock) return [];
+    
     const data: { time: string; price: number; volume: number }[] = [];
     const startTime = 9 * 60 + 15; // 9:15 AM in minutes
     const endTime = 15 * 60 + 30; // 3:30 PM in minutes
@@ -95,7 +94,16 @@ export function StockDetailModal({
     return data;
   }, [stock]);
 
-  const week52RangePercent = ((stock.lastPrice - stock.yearLow) / (stock.yearHigh - stock.yearLow)) * 100;
+  // Calculate 52-week range percent - guard for null stock
+  const week52RangePercent = useMemo(() => {
+    if (!stock) return 0;
+    return ((stock.lastPrice - stock.yearLow) / (stock.yearHigh - stock.yearLow)) * 100;
+  }, [stock]);
+
+  // Early return after all hooks
+  if (!stock) return null;
+
+  const isPositive = stock.pChange >= 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

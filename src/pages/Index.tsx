@@ -11,11 +11,13 @@ import { StockDetailModal } from '@/components/dashboard/StockDetailModal';
 import { AddAlertModal } from '@/components/dashboard/AddAlertModal';
 import { AlertsPanel } from '@/components/dashboard/AlertsPanel';
 import { NewsFeed } from '@/components/dashboard/NewsFeed';
+import { PortfolioTracker } from '@/components/dashboard/PortfolioTracker';
 import { ErrorState } from '@/components/dashboard/ErrorState';
 import { useStockData } from '@/hooks/useStockData';
 import { useWatchlist } from '@/hooks/useWatchlist';
 import { usePriceAlerts } from '@/hooks/usePriceAlerts';
 import { Stock, SortOption, TabType } from '@/types/stock';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 const Index = () => {
   const queryClient = useQueryClient();
@@ -39,6 +41,7 @@ const Index = () => {
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [isPortfolioOpen, setIsPortfolioOpen] = useState(false);
   const [alertStock, setAlertStock] = useState<{ symbol: string; companyName: string; price: number } | null>(null);
 
   const handleRefresh = useCallback(() => {
@@ -77,6 +80,10 @@ const Index = () => {
     }
   }, [alertStock, addAlert]);
 
+  const handleOpenPortfolio = useCallback(() => {
+    setIsPortfolioOpen(true);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -88,6 +95,7 @@ const Index = () => {
         isRefreshing={isFetching}
         source={data?.source}
         onRefresh={handleRefresh}
+        onOpenPortfolio={handleOpenPortfolio}
       />
 
       {/* Main Content */}
@@ -187,6 +195,13 @@ const Index = () => {
           onAddAlert={handleAddAlert}
         />
       )}
+
+      {/* Portfolio Modal */}
+      <Dialog open={isPortfolioOpen} onOpenChange={setIsPortfolioOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card border-border p-0">
+          <PortfolioTracker stocks={data?.stocks || []} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

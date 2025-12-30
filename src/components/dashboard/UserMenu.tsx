@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { User, LogOut, LogIn, Settings } from 'lucide-react';
+import { User, LogOut, LogIn, Settings, Briefcase, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,7 +11,11 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
-export function UserMenu() {
+interface UserMenuProps {
+  onOpenPortfolio?: () => void;
+}
+
+export function UserMenu({ onOpenPortfolio }: UserMenuProps) {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
 
@@ -29,7 +33,7 @@ export function UserMenu() {
         className="gap-2"
       >
         <LogIn className="w-4 h-4" />
-        Sign In
+        <span className="hidden sm:inline">Sign In</span>
       </Button>
     );
   }
@@ -46,18 +50,26 @@ export function UserMenu() {
           </span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent align="end" className="w-52">
         <div className="px-2 py-1.5">
           <p className="text-sm font-medium">{user.email?.split('@')[0]}</p>
           <p className="text-xs text-muted-foreground truncate">{user.email}</p>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-muted-foreground">
+        <DropdownMenuItem onClick={onOpenPortfolio} className="cursor-pointer">
+          <Briefcase className="w-4 h-4 mr-2" />
+          My Portfolio
+        </DropdownMenuItem>
+        <DropdownMenuItem className="cursor-pointer">
+          <Bell className="w-4 h-4 mr-2" />
+          Price Alerts
+        </DropdownMenuItem>
+        <DropdownMenuItem className="text-muted-foreground cursor-pointer">
           <Settings className="w-4 h-4 mr-2" />
           Settings
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut} className="text-loss">
+        <DropdownMenuItem onClick={handleSignOut} className="text-loss cursor-pointer">
           <LogOut className="w-4 h-4 mr-2" />
           Sign Out
         </DropdownMenuItem>

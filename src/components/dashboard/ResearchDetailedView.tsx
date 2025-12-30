@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -11,10 +12,12 @@ import {
   Shield,
   BarChart2,
   Activity,
+  Briefcase,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ResearchPrediction } from '@/types/prediction';
 import { Stock } from '@/types/stock';
+import { generateInstitutionalReport } from '@/lib/generateInstitutionalReport';
 
 interface ResearchDetailedViewProps {
   prediction: ResearchPrediction;
@@ -26,10 +29,22 @@ interface ResearchDetailedViewProps {
 
 export function ResearchDetailedView({ 
   prediction, 
+  stock,
   onBack, 
   onDownloadPDF, 
   isGeneratingPDF 
 }: ResearchDetailedViewProps) {
+  const [isGeneratingInstitutional, setIsGeneratingInstitutional] = useState(false);
+
+  const handleDownloadInstitutional = async () => {
+    setIsGeneratingInstitutional(true);
+    try {
+      await generateInstitutionalReport(prediction, stock);
+    } finally {
+      setIsGeneratingInstitutional(false);
+    }
+  };
+
   const getRiskColor = (level: string) => {
     switch (level) {
       case 'low': return 'text-gain bg-gain/10';
@@ -54,15 +69,27 @@ export function ResearchDetailedView({
     <div className="mt-6 rounded-xl border border-border/50 overflow-hidden bg-card">
       {/* Header */}
       <div className="p-4 bg-gradient-to-r from-primary/10 via-card to-accent/10 border-b border-border/50">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <Button variant="ghost" size="sm" onClick={onBack} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
             Back to Summary
           </Button>
-          <Button variant="outline" size="sm" onClick={onDownloadPDF} disabled={isGeneratingPDF} className="gap-2">
-            <Download className="w-4 h-4" />
-            {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={onDownloadPDF} disabled={isGeneratingPDF} className="gap-2">
+              <Download className="w-4 h-4" />
+              {isGeneratingPDF ? 'Generating...' : 'Quick PDF'}
+            </Button>
+            <Button 
+              variant="default" 
+              size="sm" 
+              onClick={handleDownloadInstitutional} 
+              disabled={isGeneratingInstitutional} 
+              className="gap-2 bg-gradient-to-r from-primary to-accent"
+            >
+              <Briefcase className="w-4 h-4" />
+              {isGeneratingInstitutional ? 'Generating...' : 'Institutional Report'}
+            </Button>
+          </div>
         </div>
         <h2 className="text-lg font-semibold mt-3">Detailed Research Analysis</h2>
         <p className="text-xs text-muted-foreground">{prediction.companyName} ({prediction.symbol})</p>

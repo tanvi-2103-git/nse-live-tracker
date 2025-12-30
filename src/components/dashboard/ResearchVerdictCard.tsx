@@ -17,12 +17,14 @@ import {
   Target,
   Activity,
   BarChart2,
+  Briefcase,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useResearchPrediction } from '@/hooks/useResearchPrediction';
 import { Stock } from '@/types/stock';
 import { ResearchDetailedView } from './ResearchDetailedView';
 import { generateResearchPDF } from '@/lib/pdfGenerator';
+import { generateInstitutionalReport } from '@/lib/generateInstitutionalReport';
 
 interface ResearchVerdictCardProps {
   stock: Stock;
@@ -33,6 +35,7 @@ export function ResearchVerdictCard({ stock }: ResearchVerdictCardProps) {
   const [showResult, setShowResult] = useState(false);
   const [showDetailedView, setShowDetailedView] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [isGeneratingInstitutional, setIsGeneratingInstitutional] = useState(false);
 
   useEffect(() => {
     setShowResult(false);
@@ -62,6 +65,16 @@ export function ResearchVerdictCard({ stock }: ResearchVerdictCardProps) {
       await generateResearchPDF(prediction, stock);
     } finally {
       setIsGeneratingPDF(false);
+    }
+  };
+
+  const handleDownloadInstitutionalPDF = async () => {
+    if (!prediction) return;
+    setIsGeneratingInstitutional(true);
+    try {
+      await generateInstitutionalReport(prediction, stock);
+    } finally {
+      setIsGeneratingInstitutional(false);
     }
   };
 
@@ -387,9 +400,21 @@ export function ResearchVerdictCard({ stock }: ResearchVerdictCardProps) {
             className="gap-2 h-10"
           >
             <Download className={cn("w-4 h-4", isGeneratingPDF && "animate-bounce")} />
-            {isGeneratingPDF ? 'Generating...' : 'Full Report (PDF)'}
+            {isGeneratingPDF ? 'Generating...' : 'Quick Report'}
           </Button>
         </div>
+
+        {/* Level-3 Institutional Report Button */}
+        <Button 
+          variant="default"
+          size="sm" 
+          onClick={handleDownloadInstitutionalPDF}
+          disabled={isGeneratingInstitutional}
+          className="w-full gap-2 h-11 bg-gradient-to-r from-primary via-primary to-accent hover:opacity-90 transition-opacity"
+        >
+          <Briefcase className={cn("w-4 h-4", isGeneratingInstitutional && "animate-pulse")} />
+          {isGeneratingInstitutional ? 'Generating Institutional Report...' : 'Download Institutional Research Report (Level-3)'}
+        </Button>
 
         <Button 
           variant="ghost" 

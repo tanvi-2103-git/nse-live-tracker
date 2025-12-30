@@ -11,15 +11,14 @@ import {
   AlertTriangle,
   RefreshCw,
   Clock,
-  ChevronDown,
   FileText,
   Download,
   Shield,
   Target,
   Activity,
+  BarChart2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ResearchPrediction } from '@/types/prediction';
 import { useResearchPrediction } from '@/hooks/useResearchPrediction';
 import { Stock } from '@/types/stock';
 import { ResearchDetailedView } from './ResearchDetailedView';
@@ -92,6 +91,14 @@ export function ResearchVerdictCard({ stock }: ResearchVerdictCardProps) {
     }
   };
 
+  const getIndicatorColor = (status: string) => {
+    const lower = status?.toLowerCase() || '';
+    if (lower === 'bullish' || lower === 'overbought') return 'bg-gain/20 text-gain border-gain/30';
+    if (lower === 'bearish' || lower === 'oversold') return 'bg-loss/20 text-loss border-loss/30';
+    if (lower === 'weak' || lower === 'mixed') return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+    return 'bg-muted/50 text-muted-foreground border-border/50';
+  };
+
   const getSentimentColor = (sentiment: string) => {
     switch (sentiment) {
       case 'positive': return 'text-gain';
@@ -126,6 +133,10 @@ export function ResearchVerdictCard({ stock }: ResearchVerdictCardProps) {
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Target className="w-4 h-4 text-primary" />
             <span>Professional verdict with confidence rating</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <BarChart2 className="w-4 h-4 text-primary" />
+            <span>Technical indicators: RSI, MACD, Moving Averages</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Activity className="w-4 h-4 text-primary" />
@@ -216,6 +227,8 @@ export function ResearchVerdictCard({ stock }: ResearchVerdictCardProps) {
     );
   }
 
+  const indicators = prediction.technicalIndicators;
+
   // Level 1 - Dashboard View
   return (
     <div className={cn(
@@ -274,6 +287,38 @@ export function ResearchVerdictCard({ stock }: ResearchVerdictCardProps) {
             {prediction.verdict.reasoningSentence}
           </p>
         </div>
+
+        {/* Technical Indicators Panel */}
+        {indicators && (
+          <div className="p-3 rounded-lg bg-secondary/20 border border-border/30">
+            <div className="flex items-center gap-2 mb-3">
+              <BarChart2 className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium">Technical Indicators</span>
+              <span className="text-xs text-muted-foreground">(Estimated)</span>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              <div className={cn("p-2 rounded-lg border text-center", getIndicatorColor(indicators.rsiStatus))}>
+                <p className="text-[10px] text-muted-foreground mb-0.5">RSI</p>
+                <p className="text-xs font-semibold">{indicators.rsiStatus}</p>
+              </div>
+              <div className={cn("p-2 rounded-lg border text-center", getIndicatorColor(indicators.macdSignal))}>
+                <p className="text-[10px] text-muted-foreground mb-0.5">MACD</p>
+                <p className="text-xs font-semibold">{indicators.macdSignal}</p>
+              </div>
+              <div className={cn("p-2 rounded-lg border text-center", getIndicatorColor(indicators.overallBias))}>
+                <p className="text-[10px] text-muted-foreground mb-0.5">MA Trend</p>
+                <p className="text-xs font-semibold">{indicators.overallBias}</p>
+              </div>
+              <div className={cn(
+                "p-2 rounded-lg border text-center",
+                getIndicatorColor(indicators.overallBias)
+              )}>
+                <p className="text-[10px] text-muted-foreground mb-0.5">Overall</p>
+                <p className="text-xs font-semibold">{indicators.overallBias}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Key Price Levels */}
         <div className="grid grid-cols-3 gap-2">

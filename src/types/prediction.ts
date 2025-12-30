@@ -78,6 +78,17 @@ export interface TechnicalAnalysis {
   trendInterpretation: string;
 }
 
+export interface TechnicalIndicators {
+  rsiStatus: 'Overbought' | 'Oversold' | 'Neutral';
+  rsiReasoning: string;
+  macdSignal: 'Bullish' | 'Bearish' | 'Weak';
+  macdReasoning: string;
+  shortMA: string;
+  mediumMA: string;
+  longMA: string;
+  overallBias: 'Bullish' | 'Bearish' | 'Mixed' | 'Neutral';
+}
+
 export interface ResearchPrediction {
   // Core identification
   symbol: string;
@@ -141,6 +152,9 @@ export interface ResearchPrediction {
     institutionalInterest?: string;
     unavailableNote?: string;
   };
+  
+  // Technical Indicators
+  technicalIndicators: TechnicalIndicators;
   
   // Disclaimers
   riskTransparency: string;

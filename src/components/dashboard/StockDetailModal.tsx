@@ -28,7 +28,7 @@ import {
 } from 'recharts';
 import { Stock } from '@/types/stock';
 import { cn } from '@/lib/utils';
-import { AIPredictionCard } from './AIPredictionCard';
+import { ResearchVerdictCard } from './ResearchVerdictCard';
 import { CandlestickChart } from './CandlestickChart';
 
 type ChartMode = 'intraday' | 'daily' | 'weekly';
@@ -295,8 +295,8 @@ export function StockDetailModal({
           </div>
         </div>
 
-        {/* AI Price Prediction */}
-        <AIPredictionCard stock={stock} />
+        {/* AI Equity Research */}
+        <ResearchVerdictCard stock={stock} />
       </DialogContent>
     </Dialog>
   );

@@ -9,6 +9,8 @@ import {
   Target,
   BarChart3,
   Shield,
+  BarChart2,
+  Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ResearchPrediction } from '@/types/prediction';
@@ -35,6 +37,18 @@ export function ResearchDetailedView({
       default: return 'text-yellow-400 bg-yellow-500/10';
     }
   };
+
+  const getIndicatorColor = (status: string) => {
+    const lower = status?.toLowerCase() || '';
+    if (lower === 'bullish') return 'bg-gain/20 text-gain border-gain/30';
+    if (lower === 'bearish') return 'bg-loss/20 text-loss border-loss/30';
+    if (lower === 'overbought') return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+    if (lower === 'oversold') return 'bg-primary/20 text-primary border-primary/30';
+    if (lower === 'weak' || lower === 'mixed') return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+    return 'bg-muted/50 text-muted-foreground border-border/50';
+  };
+
+  const indicators = prediction.technicalIndicators;
 
   return (
     <div className="mt-6 rounded-xl border border-border/50 overflow-hidden bg-card">
@@ -66,6 +80,56 @@ export function ResearchDetailedView({
           </p>
         </section>
 
+        {/* Technical Indicators Panel */}
+        {indicators && (
+          <section>
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <BarChart2 className="w-4 h-4 text-primary" />
+              Technical Indicator Analysis
+              <span className="text-xs text-muted-foreground font-normal">(Probabilistic Estimates)</span>
+            </h3>
+            
+            <div className="space-y-3">
+              {/* Indicator Badges */}
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className={cn("text-xs", getIndicatorColor(indicators.rsiStatus))}>
+                  RSI: {indicators.rsiStatus}
+                </Badge>
+                <Badge variant="outline" className={cn("text-xs", getIndicatorColor(indicators.macdSignal))}>
+                  MACD: {indicators.macdSignal}
+                </Badge>
+                <Badge variant="outline" className={cn("text-xs", getIndicatorColor(indicators.overallBias))}>
+                  Overall Bias: {indicators.overallBias}
+                </Badge>
+              </div>
+
+              {/* Indicator Details */}
+              <div className="grid gap-2">
+                <div className="p-2 rounded bg-secondary/20 border border-border/20">
+                  <span className="text-xs font-medium text-primary">RSI Analysis: </span>
+                  <span className="text-xs text-muted-foreground">{indicators.rsiReasoning}</span>
+                </div>
+                <div className="p-2 rounded bg-secondary/20 border border-border/20">
+                  <span className="text-xs font-medium text-primary">MACD Signal: </span>
+                  <span className="text-xs text-muted-foreground">{indicators.macdReasoning}</span>
+                </div>
+                <div className="p-2 rounded bg-secondary/20 border border-border/20">
+                  <span className="text-xs font-medium text-primary">20-Day MA: </span>
+                  <span className="text-xs text-muted-foreground">{indicators.shortMA}</span>
+                </div>
+                <div className="p-2 rounded bg-secondary/20 border border-border/20">
+                  <span className="text-xs font-medium text-primary">50-Day MA: </span>
+                  <span className="text-xs text-muted-foreground">{indicators.mediumMA}</span>
+                </div>
+                <div className="p-2 rounded bg-secondary/20 border border-border/20">
+                  <span className="text-xs font-medium text-primary">200-Day MA: </span>
+                  <span className="text-xs text-muted-foreground">{indicators.longMA}</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Technical Structure */}
         <section>
           <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
@@ -83,7 +147,10 @@ export function ResearchDetailedView({
 
         {/* Scenarios */}
         <section>
-          <h3 className="text-sm font-semibold mb-2">Scenario-Based Forecast</h3>
+          <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+            <Activity className="w-4 h-4 text-primary" />
+            Scenario-Based Forecast
+          </h3>
           <div className="space-y-2">
             {prediction.scenarios && Object.values(prediction.scenarios).map((scenario: any, i) => (
               <div key={i} className={cn(
@@ -95,7 +162,16 @@ export function ResearchDetailedView({
                   <span className="font-medium text-sm">{scenario.name}</span>
                   <Badge variant="outline" className="text-xs">{scenario.probability}</Badge>
                 </div>
-                <p className="text-xs text-muted-foreground">{scenario.expectedBehavior}</p>
+                <p className="text-xs text-muted-foreground mb-2">{scenario.expectedBehavior}</p>
+                {scenario.keyTriggers && scenario.keyTriggers.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {scenario.keyTriggers.map((trigger: string, idx: number) => (
+                      <span key={idx} className="text-[10px] px-1.5 py-0.5 rounded bg-background/50 text-muted-foreground">
+                        {trigger}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -112,10 +188,49 @@ export function ResearchDetailedView({
               <div key={i} className={cn("p-2 rounded-lg text-xs", getRiskColor(risk.level))}>
                 <span className="font-medium">{risk.type}</span>
                 <span className="ml-1 opacity-70">({risk.level})</span>
+                {risk.description && (
+                  <p className="text-[10px] opacity-70 mt-0.5">{risk.description}</p>
+                )}
               </div>
             ))}
           </div>
         </section>
+
+        {/* Timeframe Outlooks */}
+        {prediction.timeframeOutlooks && (
+          <section>
+            <h3 className="text-sm font-semibold mb-2">Multi-Timeframe Outlook</h3>
+            <div className="grid grid-cols-3 gap-2">
+              <div className={cn(
+                "p-2 rounded-lg border text-center",
+                prediction.timeframeOutlooks.shortTerm.bias === 'bullish' ? 'bg-gain/10 border-gain/20' :
+                prediction.timeframeOutlooks.shortTerm.bias === 'bearish' ? 'bg-loss/10 border-loss/20' :
+                'bg-muted/30 border-border/30'
+              )}>
+                <p className="text-[10px] text-muted-foreground">{prediction.timeframeOutlooks.shortTerm.days}</p>
+                <p className="text-xs font-medium capitalize">{prediction.timeframeOutlooks.shortTerm.bias}</p>
+              </div>
+              <div className={cn(
+                "p-2 rounded-lg border text-center",
+                prediction.timeframeOutlooks.mediumTerm.bias === 'bullish' ? 'bg-gain/10 border-gain/20' :
+                prediction.timeframeOutlooks.mediumTerm.bias === 'bearish' ? 'bg-loss/10 border-loss/20' :
+                'bg-muted/30 border-border/30'
+              )}>
+                <p className="text-[10px] text-muted-foreground">{prediction.timeframeOutlooks.mediumTerm.weeks}</p>
+                <p className="text-xs font-medium capitalize">{prediction.timeframeOutlooks.mediumTerm.bias}</p>
+              </div>
+              <div className={cn(
+                "p-2 rounded-lg border text-center",
+                prediction.timeframeOutlooks.longTerm.bias === 'bullish' ? 'bg-gain/10 border-gain/20' :
+                prediction.timeframeOutlooks.longTerm.bias === 'bearish' ? 'bg-loss/10 border-loss/20' :
+                'bg-muted/30 border-border/30'
+              )}>
+                <p className="text-[10px] text-muted-foreground">{prediction.timeframeOutlooks.longTerm.months}</p>
+                <p className="text-xs font-medium capitalize">{prediction.timeframeOutlooks.longTerm.bias}</p>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Conclusion */}
         <section>

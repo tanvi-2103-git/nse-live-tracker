@@ -26,6 +26,7 @@ const buildResearchPrompt = (stock: StockData) => {
   const distanceFrom52High = ((stock.yearHigh - stock.lastPrice) / stock.yearHigh * 100).toFixed(2);
   const distanceFrom52Low = ((stock.lastPrice - stock.yearLow) / stock.yearLow * 100).toFixed(2);
   const dayRangePosition = ((stock.lastPrice - stock.dayLow) / (stock.dayHigh - stock.dayLow || 1) * 100).toFixed(2);
+  const yearRangePosition = ((stock.lastPrice - stock.yearLow) / (stock.yearHigh - stock.yearLow || 1) * 100).toFixed(2);
   
   return `You are a senior equity research analyst at a top-tier investment bank. Your role is to provide institutional-grade research analysis with professional tone, probability-based forecasting, and complete transparency about data limitations.
 
@@ -35,6 +36,7 @@ CRITICAL RULES:
 3. Maintain professional, calm tone like Goldman Sachs or Bloomberg research
 4. If data is unavailable, explicitly state "Data not available for analysis"
 5. Confidence should typically be 50-75% range unless strong evidence
+6. For technical indicators (RSI, MACD, MA), INFER from available price data and clearly state these are probabilistic estimates
 
 STOCK UNDER ANALYSIS:
 Symbol: ${stock.symbol}
@@ -54,6 +56,7 @@ CURRENT MARKET DATA:
 - 52-Week Low: ₹${stock.yearLow.toLocaleString()}
 - Distance from 52W High: ${distanceFrom52High}%
 - Distance from 52W Low: ${distanceFrom52Low}%
+- Position in 52W Range: ${yearRangePosition}%
 
 PERFORMANCE DATA:
 - 30-Day Performance: ${stock.perChange30d >= 0 ? '+' : ''}${stock.perChange30d.toFixed(2)}%
@@ -61,6 +64,17 @@ PERFORMANCE DATA:
 
 TECHNICAL POSITION:
 - Day Range Position: ${dayRangePosition}% (0% = at day low, 100% = at day high)
+
+TECHNICAL INDICATOR INFERENCE RULES:
+Use these heuristics to estimate indicator states:
+- RSI: If stock near 52W high (>85% range) with recent gains = likely Overbought. If near 52W low (<15% range) with recent losses = likely Oversold. Otherwise Neutral.
+- MACD: Use 30D performance. Strong positive (>5%) = Bullish. Strong negative (<-5%) = Bearish. Otherwise = Weak/Neutral.
+- Moving Averages: 
+  - 20-day (short): Use day's position and recent trend
+  - 50-day (medium): Use 30D performance direction
+  - 200-day (long): Use 365D performance direction
+
+ALWAYS state these are "probabilistic estimates based on available data" - never present as actual calculated indicators.
 
 Provide your research analysis in the following JSON format ONLY. No markdown, no code blocks, just pure JSON:
 
@@ -83,6 +97,17 @@ Provide your research analysis in the following JSON format ONLY. No markdown, n
     "trendStrength": "Weak" | "Moderate" | "Strong"
   },
   
+  "technicalIndicators": {
+    "rsiStatus": "Overbought" | "Oversold" | "Neutral",
+    "rsiReasoning": "Brief explanation of RSI inference based on position in 52W range",
+    "macdSignal": "Bullish" | "Bearish" | "Weak",
+    "macdReasoning": "Brief explanation of MACD signal based on momentum data",
+    "shortMA": "Price is [above/below] estimated 20-day average - [bullish/bearish] short-term signal",
+    "mediumMA": "50-day trend appears [up/down/flat] based on 30-day performance",
+    "longMA": "200-day bias is [bullish/bearish/neutral] based on yearly performance",
+    "overallBias": "Bullish" | "Bearish" | "Mixed" | "Neutral"
+  },
+  
   "summaryBullets": [
     { "icon": "📊", "label": "Market State", "value": "Trending/Consolidating/Volatile/Weak", "sentiment": "positive/negative/neutral" },
     { "icon": "📈", "label": "Momentum", "value": "Increasing/Weak/Reversal Signal/Flat", "sentiment": "positive/negative/neutral" },
@@ -94,13 +119,13 @@ Provide your research analysis in the following JSON format ONLY. No markdown, n
   
   "likelyOutcome": "Clear, realistic expectation for price movement",
   
-  "executiveSummary": "2-3 paragraph professional research summary explaining the analysis, trend, and key factors driving the outlook. Write like a senior analyst.",
+  "executiveSummary": "2-3 paragraph professional research summary. Include technical indicator insights (RSI condition, MACD signal, MA trends). State clearly that indicators are estimated from available data. Write like a senior analyst.",
   
   "technicalStructure": {
     "priceVs52Week": "Description of current price position relative to 52-week range",
-    "shortTermView": "1-5 day outlook with technical reasoning",
-    "mediumTermView": "1-4 week outlook with technical reasoning",
-    "momentumCondition": "Current momentum analysis",
+    "shortTermView": "1-5 day outlook with technical reasoning including RSI/MACD insight",
+    "mediumTermView": "1-4 week outlook with MA trend analysis",
+    "momentumCondition": "Current momentum analysis with MACD context",
     "volumeConviction": "Volume analysis and what it indicates",
     "supportResistanceReasoning": "Why these support/resistance levels matter"
   },
@@ -138,15 +163,15 @@ Provide your research analysis in the following JSON format ONLY. No markdown, n
     { "type": "Unknown Events", "level": "medium", "description": "Unforeseen events can always impact prices" }
   ],
   
-  "conclusion": "Professional conclusion paragraph summarizing the view and key action points. Calm, confident, but realistic.",
+  "conclusion": "Professional conclusion paragraph including technical indicator summary. Calm, confident, but realistic.",
   
   "companyContext": "Brief description of the business and what drives its value",
   "sectorPositioning": "Where the stock stands in its sector context",
   
   "timeframeOutlooks": {
-    "shortTerm": { "days": "1-5 Days", "outlook": "Outlook description", "bias": "bullish/bearish/neutral" },
-    "mediumTerm": { "weeks": "1-4 Weeks", "outlook": "Outlook description", "bias": "bullish/bearish/neutral" },
-    "longTerm": { "months": "1-3 Months", "outlook": "Outlook description based on available data only", "bias": "bullish/bearish/neutral" }
+    "shortTerm": { "days": "1-5 Days", "outlook": "Outlook with RSI context", "bias": "bullish/bearish/neutral" },
+    "mediumTerm": { "weeks": "1-4 Weeks", "outlook": "Outlook with MA trends", "bias": "bullish/bearish/neutral" },
+    "longTerm": { "months": "1-3 Months", "outlook": "Outlook based on long-term trend", "bias": "bullish/bearish/neutral" }
   },
   
   "technicalDeepDive": {
@@ -155,7 +180,7 @@ Provide your research analysis in the following JSON format ONLY. No markdown, n
     "volumeRole": "How volume is supporting or contradicting price action",
     "supportReliability": "How reliable are the support levels",
     "resistanceStrength": "How strong are the resistance levels",
-    "trendInterpretation": "Overall trend interpretation"
+    "trendInterpretation": "Overall trend interpretation with indicator synthesis"
   },
   
   "macroNewsFusion": {
@@ -163,11 +188,11 @@ Provide your research analysis in the following JSON format ONLY. No markdown, n
     "unavailableNote": "Real-time macro and news data not integrated. Analysis based on price and volume data only."
   },
   
-  "riskTransparency": "This outlook is probabilistic, not guaranteed. Sudden news, macro events, or market volatility can change outcomes significantly.",
+  "riskTransparency": "This outlook is probabilistic, not guaranteed. Technical indicators shown are estimates based on available price data. Sudden news, macro events, or market volatility can change outcomes significantly.",
   
-  "professionalDisclaimer": "This is AI-assisted research intended for educational insight. Market conditions can change quickly. This does not constitute financial advice.",
+  "professionalDisclaimer": "This is AI-assisted research intended for educational insight. Technical indicators are inferred from price patterns, not calculated from actual indicator data. Market conditions can change quickly. This does not constitute financial advice.",
   
-  "legalDisclaimer": "This analysis is generated by artificial intelligence for informational purposes only. It should not be considered as investment advice, recommendation, or solicitation to buy or sell any securities. Past performance is not indicative of future results. Always consult with a qualified financial advisor before making investment decisions."
+  "legalDisclaimer": "This analysis is generated by artificial intelligence for informational purposes only. It should not be considered as investment advice, recommendation, or solicitation to buy or sell any securities. Technical indicators shown are probabilistic estimates. Past performance is not indicative of future results. Always consult with a qualified financial advisor before making investment decisions."
 }
 
 IMPORTANT: Output ONLY valid JSON. No explanations, no markdown formatting.`;
@@ -209,7 +234,7 @@ serve(async (req) => {
         messages: [
           { 
             role: "system", 
-            content: "You are a senior equity research analyst. Always respond with valid JSON only. Never include markdown, code blocks, or any text outside the JSON. Be professional, probability-focused, and never hallucinate unavailable data." 
+            content: "You are a senior equity research analyst. Always respond with valid JSON only. Never include markdown, code blocks, or any text outside the JSON. Be professional, probability-focused, and never hallucinate unavailable data. Technical indicators should be inferred from available price data with clear probabilistic framing." 
           },
           { role: "user", content: buildResearchPrompt(stock) }
         ],
@@ -267,6 +292,16 @@ serve(async (req) => {
       // Professional fallback based on technical data
       const trend = stock.pChange > 1 ? 'Bullish' : stock.pChange < -1 ? 'Bearish' : 'Neutral';
       const analystBias = stock.pChange > 2 ? 'Accumulate' : stock.pChange < -2 ? 'Cautious' : 'Hold';
+      const yearRangePos = ((stock.lastPrice - stock.yearLow) / (stock.yearHigh - stock.yearLow || 1) * 100);
+      
+      // Infer RSI status from 52W range position
+      const rsiStatus = yearRangePos > 85 ? 'Overbought' : yearRangePos < 15 ? 'Oversold' : 'Neutral';
+      // Infer MACD from 30D performance
+      const macdSignal = stock.perChange30d > 5 ? 'Bullish' : stock.perChange30d < -5 ? 'Bearish' : 'Weak';
+      // Overall bias
+      const overallBias = (trend === 'Bullish' && macdSignal === 'Bullish') ? 'Bullish' : 
+                          (trend === 'Bearish' && macdSignal === 'Bearish') ? 'Bearish' : 
+                          (trend !== 'Neutral' || macdSignal !== 'Weak') ? 'Mixed' : 'Neutral';
       
       parsedResearch = {
         symbol: stock.symbol,
@@ -284,21 +319,31 @@ serve(async (req) => {
           resistance: Math.round(stock.dayHigh * 1.005),
           trendStrength: Math.abs(stock.pChange) > 2 ? 'Strong' : Math.abs(stock.pChange) > 0.5 ? 'Moderate' : 'Weak'
         },
+        technicalIndicators: {
+          rsiStatus,
+          rsiReasoning: `Stock at ${yearRangePos.toFixed(0)}% of 52-week range suggests ${rsiStatus.toLowerCase()} condition (probabilistic estimate)`,
+          macdSignal,
+          macdReasoning: `30-day performance of ${stock.perChange30d.toFixed(2)}% indicates ${macdSignal.toLowerCase()} momentum signal`,
+          shortMA: `Price ${stock.pChange > 0 ? 'above' : 'below'} estimated 20-day average - ${stock.pChange > 0 ? 'bullish' : 'bearish'} short-term signal`,
+          mediumMA: `50-day trend appears ${stock.perChange30d > 0 ? 'up' : 'down'} based on 30-day performance of ${stock.perChange30d.toFixed(2)}%`,
+          longMA: `200-day bias is ${stock.perChange365d > 5 ? 'bullish' : stock.perChange365d < -5 ? 'bearish' : 'neutral'} based on yearly performance`,
+          overallBias
+        },
         summaryBullets: [
           { icon: "📊", label: "Market State", value: Math.abs(stock.pChange) > 2 ? "Trending" : "Consolidating", sentiment: stock.pChange > 0 ? "positive" : stock.pChange < 0 ? "negative" : "neutral" },
           { icon: "📈", label: "Momentum", value: stock.pChange > 0.5 ? "Increasing" : stock.pChange < -0.5 ? "Weak" : "Flat", sentiment: stock.pChange > 0 ? "positive" : "negative" },
           { icon: "📦", label: "Volume Strength", value: "Normal", sentiment: "neutral" },
-          { icon: "⚠", label: "Risk Note", value: "Neutral", sentiment: "neutral" },
+          { icon: "⚠", label: "Risk Note", value: rsiStatus, sentiment: rsiStatus === 'Neutral' ? "neutral" : "negative" },
           { icon: "📰", label: "News Impact", value: "Not Available", sentiment: "neutral" },
           { icon: "🎯", label: "Likely Outcome", value: `Expected to ${trend === 'Bullish' ? 'test resistance' : trend === 'Bearish' ? 'test support' : 'consolidate'}`, sentiment: stock.pChange > 0 ? "positive" : "neutral" }
         ],
         likelyOutcome: `${stock.symbol} is expected to ${trend === 'Bullish' ? 'continue upward momentum toward resistance' : trend === 'Bearish' ? 'face selling pressure toward support' : 'trade range-bound near current levels'}.`,
-        executiveSummary: `${stock.companyName} (${stock.symbol}) is currently trading at ₹${stock.lastPrice.toLocaleString()}, showing a ${stock.pChange >= 0 ? 'positive' : 'negative'} change of ${stock.pChange.toFixed(2)}% from previous close. The stock is positioned ${((stock.lastPrice - stock.yearLow) / (stock.yearHigh - stock.yearLow) * 100).toFixed(0)}% within its 52-week range.\n\nBased on available technical data, the near-term outlook appears ${trend.toLowerCase()} with ${analystBias.toLowerCase()} bias. Volume and momentum indicators suggest ${Math.abs(stock.pChange) > 2 ? 'strong conviction' : 'moderate conviction'} in current price direction.`,
+        executiveSummary: `${stock.companyName} (${stock.symbol}) is currently trading at ₹${stock.lastPrice.toLocaleString()}, showing a ${stock.pChange >= 0 ? 'positive' : 'negative'} change of ${stock.pChange.toFixed(2)}% from previous close. The stock is positioned ${yearRangePos.toFixed(0)}% within its 52-week range.\n\nTechnical indicator estimates suggest ${rsiStatus.toLowerCase()} RSI conditions with ${macdSignal.toLowerCase()} MACD momentum. The ${stock.perChange30d > 0 ? 'positive' : 'negative'} 30-day performance indicates the medium-term moving average trend is ${stock.perChange30d > 0 ? 'bullish' : 'bearish'}.\n\nBased on available technical data, the near-term outlook appears ${trend.toLowerCase()} with ${analystBias.toLowerCase()} bias. Note: Technical indicators shown are probabilistic estimates based on available price data.`,
         technicalStructure: {
           priceVs52Week: `Trading ${((stock.yearHigh - stock.lastPrice) / stock.yearHigh * 100).toFixed(1)}% below 52-week high and ${((stock.lastPrice - stock.yearLow) / stock.yearLow * 100).toFixed(1)}% above 52-week low.`,
-          shortTermView: `Near-term momentum is ${stock.pChange > 0 ? 'positive' : 'negative'} based on today's price action.`,
-          mediumTermView: `30-day performance of ${stock.perChange30d.toFixed(2)}% indicates ${stock.perChange30d > 0 ? 'uptrend' : 'downtrend'} continuation potential.`,
-          momentumCondition: `Current momentum ${stock.pChange > 0.5 ? 'supports buyers' : stock.pChange < -0.5 ? 'favors sellers' : 'shows equilibrium'}.`,
+          shortTermView: `Near-term momentum is ${stock.pChange > 0 ? 'positive' : 'negative'}. RSI estimate suggests ${rsiStatus.toLowerCase()} conditions.`,
+          mediumTermView: `30-day performance of ${stock.perChange30d.toFixed(2)}% indicates ${stock.perChange30d > 0 ? 'uptrend' : 'downtrend'}. MACD signal: ${macdSignal}.`,
+          momentumCondition: `MACD indicates ${macdSignal.toLowerCase()} momentum based on price trajectory.`,
           volumeConviction: `Volume of ${stock.totalTradedVolume.toLocaleString()} shares traded today.`,
           supportResistanceReasoning: `Support near day low of ₹${stock.dayLow.toLocaleString()}, resistance near day high of ₹${stock.dayHigh.toLocaleString()}.`
         },
@@ -332,67 +377,44 @@ serve(async (req) => {
           { type: "Liquidity Risk", level: "low", description: "Adequate trading volume observed" },
           { type: "Unknown Events", level: "medium", description: "Unforeseen events can always impact prices" }
         ],
-        conclusion: `Based on the available technical data, ${stock.symbol} presents a ${trend.toLowerCase()} outlook in the near term. The current price action and momentum indicators suggest a ${analystBias.toLowerCase()} stance. Investors should monitor key support at ₹${stock.dayLow.toLocaleString()} and resistance at ₹${stock.dayHigh.toLocaleString()} for directional cues.`,
+        conclusion: `Based on the available technical data, ${stock.symbol} presents a ${trend.toLowerCase()} outlook in the near term. Estimated RSI is ${rsiStatus.toLowerCase()}, MACD signals ${macdSignal.toLowerCase()} momentum, and moving average trends suggest ${overallBias.toLowerCase()} bias. Investors should monitor key support at ₹${stock.dayLow.toLocaleString()} and resistance at ₹${stock.dayHigh.toLocaleString()} for directional cues.`,
         companyContext: `${stock.companyName} is a publicly traded company on the NSE.`,
         sectorPositioning: "Sector positioning data not available for this analysis.",
         timeframeOutlooks: {
-          shortTerm: { days: "1-5 Days", outlook: `${trend} momentum expected to continue`, bias: trend.toLowerCase() as 'bullish' | 'bearish' | 'neutral' },
-          mediumTerm: { weeks: "1-4 Weeks", outlook: `Watch for ${stock.perChange30d > 0 ? 'continuation' : 'reversal'} signals`, bias: stock.perChange30d > 0 ? 'bullish' : stock.perChange30d < 0 ? 'bearish' : 'neutral' },
-          longTerm: { months: "1-3 Months", outlook: "Insufficient data for long-term projection", bias: "neutral" }
+          shortTerm: { days: "1-5 Days", outlook: `${trend} momentum with ${rsiStatus} RSI conditions`, bias: trend.toLowerCase() as 'bullish' | 'bearish' | 'neutral' },
+          mediumTerm: { weeks: "1-4 Weeks", outlook: `${macdSignal} MACD signal suggests ${stock.perChange30d > 0 ? 'continuation' : 'caution'}`, bias: stock.perChange30d > 0 ? 'bullish' : stock.perChange30d < 0 ? 'bearish' : 'neutral' },
+          longTerm: { months: "1-3 Months", outlook: `Long-term MA bias: ${stock.perChange365d > 5 ? 'bullish' : stock.perChange365d < -5 ? 'bearish' : 'neutral'}`, bias: stock.perChange365d > 5 ? 'bullish' : stock.perChange365d < -5 ? 'bearish' : 'neutral' }
         },
         technicalDeepDive: {
           priceStructure: `Price is in a ${stock.perChange30d > 0 ? 'uptrend' : stock.perChange30d < 0 ? 'downtrend' : 'consolidation'} pattern.`,
           breakoutProbability: "Moderate - requires volume confirmation",
           volumeRole: "Volume supporting current price direction",
           supportReliability: "Day low provides near-term support reference",
-          resistanceStrength: "Day high serves as immediate resistance",
-          trendInterpretation: `Overall ${trend.toLowerCase()} bias based on price action`
+          resistanceStrength: "Day high represents immediate resistance zone",
+          trendInterpretation: `Overall ${overallBias.toLowerCase()} bias based on indicator synthesis`
         },
         macroNewsFusion: {
           available: false,
           unavailableNote: "Real-time macro and news data not integrated. Analysis based on price and volume data only."
         },
-        riskTransparency: "This outlook is probabilistic, not guaranteed. Sudden news, macro events, or market volatility can change outcomes significantly.",
-        professionalDisclaimer: "This is AI-assisted research intended for educational insight. Market conditions can change quickly. This does not constitute financial advice.",
-        legalDisclaimer: "This analysis is generated by artificial intelligence for informational purposes only. It should not be considered as investment advice, recommendation, or solicitation to buy or sell any securities. Past performance is not indicative of future results. Always consult with a qualified financial advisor before making investment decisions."
+        riskTransparency: "This outlook is probabilistic, not guaranteed. Technical indicators shown are estimates based on available price data. Sudden news, macro events, or market volatility can change outcomes significantly.",
+        professionalDisclaimer: "This is AI-assisted research intended for educational insight. Technical indicators are inferred from price patterns, not calculated from actual indicator data. Market conditions can change quickly. This does not constitute financial advice.",
+        legalDisclaimer: "This analysis is generated by artificial intelligence for informational purposes only. Technical indicators shown are probabilistic estimates. Past performance is not indicative of future results. Always consult with a qualified financial advisor before making investment decisions."
       };
     }
 
-    // Ensure all required fields exist
-    const research = {
-      symbol: parsedResearch.symbol || stock.symbol,
-      companyName: parsedResearch.companyName || stock.companyName,
-      timestamp: parsedResearch.timestamp || new Date().toISOString(),
-      verdict: parsedResearch.verdict || {},
-      priceLevels: parsedResearch.priceLevels || {},
-      summaryBullets: parsedResearch.summaryBullets || [],
-      likelyOutcome: parsedResearch.likelyOutcome || '',
-      executiveSummary: parsedResearch.executiveSummary || '',
-      technicalStructure: parsedResearch.technicalStructure || {},
-      sentimentNews: parsedResearch.sentimentNews || { available: false },
-      scenarios: parsedResearch.scenarios || {},
-      riskDashboard: parsedResearch.riskDashboard || [],
-      conclusion: parsedResearch.conclusion || '',
-      companyContext: parsedResearch.companyContext || '',
-      sectorPositioning: parsedResearch.sectorPositioning || '',
-      timeframeOutlooks: parsedResearch.timeframeOutlooks || {},
-      technicalDeepDive: parsedResearch.technicalDeepDive || {},
-      macroNewsFusion: parsedResearch.macroNewsFusion || { available: false },
-      riskTransparency: parsedResearch.riskTransparency || 'This outlook is probabilistic, not guaranteed.',
-      professionalDisclaimer: parsedResearch.professionalDisclaimer || 'This is AI-assisted research for educational purposes only.',
-      legalDisclaimer: parsedResearch.legalDisclaimer || 'This is not investment advice. Consult a qualified advisor.'
-    };
-
-    console.log(`[Research] Analysis generated for ${stock.symbol}: ${research.verdict.trend}`);
-
-    return new Response(JSON.stringify(research), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.log(`[Research] Successfully generated analysis for ${stock.symbol}`);
+    
+    return new Response(
+      JSON.stringify(parsedResearch),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
     console.error("[Research] Error:", error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: 'Research analysis failed', details: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

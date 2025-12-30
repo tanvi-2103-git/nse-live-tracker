@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -15,22 +15,23 @@ import {
   Clock,
   ArrowUp,
   ArrowDown,
-  Minus
+  CandlestickChart as CandleIcon,
 } from 'lucide-react';
 import { 
-  LineChart, 
-  Line, 
+  AreaChart,
+  Area,
   XAxis, 
   YAxis, 
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  Area,
-  AreaChart,
 } from 'recharts';
 import { Stock } from '@/types/stock';
 import { cn } from '@/lib/utils';
 import { AIPredictionCard } from './AIPredictionCard';
+import { CandlestickChart } from './CandlestickChart';
+
+type ChartMode = 'intraday' | 'daily' | 'weekly';
 
 interface StockDetailModalProps {
   stock: Stock | null;
@@ -49,6 +50,8 @@ export function StockDetailModal({
   onToggleWatchlist,
   onAddAlert,
 }: StockDetailModalProps) {
+  const [chartMode, setChartMode] = useState<ChartMode>('intraday');
+  const [showCandlestick, setShowCandlestick] = useState(false);
   if (!stock) return null;
 
   const isPositive = stock.pChange >= 0;
@@ -152,18 +155,33 @@ export function StockDetailModal({
           </p>
         </div>
 
-        {/* Intraday Chart */}
+        {/* Chart Section */}
         <div className="mt-6 p-4 rounded-xl bg-secondary/30 border border-border/50">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-primary" />
-              Intraday Movement
+              {showCandlestick ? <CandleIcon className="w-4 h-4 text-primary" /> : <BarChart3 className="w-4 h-4 text-primary" />}
+              {showCandlestick ? 'Candlestick Chart' : 'Intraday Movement'}
             </h3>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Clock className="w-3 h-3" />
-              Last updated: {stock.lastUpdateTime}
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant={showCandlestick ? 'default' : 'outline'}
+                className="text-xs gap-1"
+                onClick={() => setShowCandlestick(!showCandlestick)}
+              >
+                <CandleIcon className="w-3 h-3" />
+                {showCandlestick ? 'Line' : 'Candles'}
+              </Button>
+              <div className="text-xs text-muted-foreground flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {stock.lastUpdateTime || '—'}
+              </div>
             </div>
           </div>
+          
+          {showCandlestick ? (
+            <CandlestickChart stock={stock} mode={chartMode} onModeChange={setChartMode} />
+          ) : (
           <div className="h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
@@ -215,6 +233,7 @@ export function StockDetailModal({
               </AreaChart>
             </ResponsiveContainer>
           </div>
+          )}
         </div>
 
         {/* Key Statistics */}

@@ -1,5 +1,5 @@
-import { memo, useState } from 'react';
-import { Star, TrendingUp, TrendingDown } from 'lucide-react';
+import { memo } from 'react';
+import { Star, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SparklineChart } from './SparklineChart';
 import { Stock } from '@/types/stock';
@@ -21,6 +21,29 @@ export const StockRow = memo(function StockRow({
   animationDelay = 0,
 }: StockRowProps) {
   const isPositive = stock.pChange >= 0;
+  const isNeutral = Math.abs(stock.pChange) < 0.1;
+
+  // Format timestamp for IST display
+  const formatUpdateTime = (timeStr: string) => {
+    if (!timeStr) return '—';
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-IN', { 
+      day: '2-digit', 
+      month: 'short', 
+      year: 'numeric' 
+    });
+    return `${dateStr} ${timeStr}`;
+  };
+
+  // Determine trend based on price change
+  const getTrend = () => {
+    if (isNeutral) return { icon: Minus, color: 'text-muted-foreground', label: 'Neutral' };
+    if (isPositive) return { icon: TrendingUp, color: 'text-gain', label: 'Bullish' };
+    return { icon: TrendingDown, color: 'text-loss', label: 'Bearish' };
+  };
+
+  const trend = getTrend();
+  const TrendIcon = trend.icon;
 
   const handleWatchlistClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -129,18 +152,18 @@ export const StockRow = memo(function StockRow({
         </div>
       </td>
 
-      {/* Sparkline */}
-      <td className="py-3 px-4 hidden md:table-cell">
-        <SparklineChart
-          data={stock.sparklineData}
-          isPositive={isPositive}
-        />
+      {/* Trend */}
+      <td className="py-3 px-4 text-center hidden md:table-cell">
+        <div className={cn("inline-flex items-center gap-1", trend.color)}>
+          <TrendIcon className="w-4 h-4" />
+          <span className="text-xs font-medium">{trend.label}</span>
+        </div>
       </td>
 
       {/* Last Updated */}
       <td className="py-3 px-4 text-right hidden sm:table-cell">
-        <p className="text-xs text-muted-foreground">
-          {stock.lastUpdateTime}
+        <p className="text-xs text-muted-foreground whitespace-nowrap">
+          {formatUpdateTime(stock.lastUpdateTime)}
         </p>
       </td>
     </tr>

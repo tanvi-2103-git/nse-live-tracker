@@ -1,6 +1,7 @@
-import { TrendingUp, Activity, Clock, RefreshCw } from 'lucide-react';
+import { TrendingUp, Activity, Clock, RefreshCw, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { UserMenu } from './UserMenu';
 
 interface HeaderProps {
   indexValue?: number;
@@ -10,6 +11,8 @@ interface HeaderProps {
   isRefreshing?: boolean;
   source?: 'live' | 'simulated';
   onRefresh: () => void;
+  onOpenPortfolio?: () => void;
+  showPortfolioButton?: boolean;
 }
 
 export function Header({
@@ -20,6 +23,8 @@ export function Header({
   isRefreshing,
   source,
   onRefresh,
+  onOpenPortfolio,
+  showPortfolioButton = true,
 }: HeaderProps) {
   const isPositive = (indexChange ?? 0) >= 0;
 
@@ -46,7 +51,7 @@ export function Header({
           </div>
 
           {/* Index Stats */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 flex-wrap">
             {/* NIFTY 50 Index */}
             <div className="flex items-center gap-4 px-4 py-2 rounded-xl bg-secondary/50 border border-border/50">
               <div>
@@ -67,7 +72,20 @@ export function Header({
             </div>
 
             {/* Status & Controls */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              {/* Portfolio Button */}
+              {showPortfolioButton && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onOpenPortfolio}
+                  className="gap-2"
+                >
+                  <Briefcase className="w-4 h-4" />
+                  <span className="hidden sm:inline">Portfolio</span>
+                </Button>
+              )}
+
               {/* Data Source Indicator */}
               <div className={cn(
                 "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium",
@@ -76,11 +94,13 @@ export function Header({
                   : "bg-accent/20 text-accent"
               )}>
                 <Activity className="w-3 h-3" />
-                {source === 'live' ? 'Live Data' : 'Simulated'}
+                <span className="hidden sm:inline">
+                  {source === 'live' ? 'Live Data' : 'Simulated'}
+                </span>
               </div>
 
               {/* Last Updated */}
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
                 <Clock className="w-3 h-3" />
                 <span>
                   {lastUpdated
@@ -98,8 +118,11 @@ export function Header({
                 className="gap-2"
               >
                 <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
-                Refresh
+                <span className="hidden sm:inline">Refresh</span>
               </Button>
+
+              {/* User Menu */}
+              <UserMenu onOpenPortfolio={onOpenPortfolio} />
             </div>
           </div>
         </div>

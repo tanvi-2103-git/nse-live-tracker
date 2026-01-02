@@ -2,6 +2,7 @@ import { TrendingUp, Activity, Clock, RefreshCw, Briefcase } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { UserMenu } from './UserMenu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface HeaderProps {
   indexValue?: number;
@@ -13,6 +14,11 @@ interface HeaderProps {
   onRefresh: () => void;
   onOpenPortfolio?: () => void;
   showPortfolioButton?: boolean;
+  // Market session props
+  marketSession?: 'OPEN' | 'PRE_POST' | 'CLOSED';
+  sessionLabel?: string;
+  sessionEmoji?: string;
+  autoRefreshEnabled?: boolean;
 }
 
 export function Header({
@@ -25,8 +31,25 @@ export function Header({
   onRefresh,
   onOpenPortfolio,
   showPortfolioButton = true,
+  marketSession,
+  sessionLabel,
+  sessionEmoji,
+  autoRefreshEnabled = true,
 }: HeaderProps) {
   const isPositive = (indexChange ?? 0) >= 0;
+
+  // Get session badge styles
+  const getSessionStyles = () => {
+    switch (marketSession) {
+      case 'OPEN':
+        return 'bg-gain-soft text-gain border-gain/20';
+      case 'PRE_POST':
+        return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+      case 'CLOSED':
+      default:
+        return 'bg-muted text-muted-foreground border-border';
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 glass border-b border-border/50">
@@ -38,7 +61,9 @@ export function Header({
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-primary-foreground" />
               </div>
-              <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-gain pulse-live" />
+              {marketSession === 'OPEN' && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-gain pulse-live" />
+              )}
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight">
@@ -73,6 +98,30 @@ export function Header({
 
             {/* Status & Controls */}
             <div className="flex items-center gap-2">
+              {/* Market Session Indicator */}
+              {marketSession && sessionLabel && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className={cn(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border",
+                        getSessionStyles()
+                      )}>
+                        <span>{sessionEmoji}</span>
+                        <span className="hidden sm:inline">{sessionLabel}</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">
+                        {marketSession === 'OPEN' && 'Market is open. Auto-refreshing every 5 seconds.'}
+                        {marketSession === 'PRE_POST' && 'Pre-market/Post-market hours. Refreshing every 15 seconds.'}
+                        {marketSession === 'CLOSED' && 'Market is closed. Use manual refresh.'}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+
               {/* Portfolio Button */}
               {showPortfolioButton && (
                 <Button

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/components/dashboard/Header';
 import { SearchBar } from '@/components/dashboard/SearchBar';
@@ -16,6 +16,7 @@ import { ErrorState } from '@/components/dashboard/ErrorState';
 import { useStockData } from '@/hooks/useStockData';
 import { useWatchlist } from '@/hooks/useWatchlist';
 import { usePriceAlerts } from '@/hooks/usePriceAlerts';
+import { useAdaptiveAutoRefresh } from '@/hooks/useAdaptiveRefresh';
 import { Stock, SortOption, TabType } from '@/types/stock';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
@@ -47,6 +48,26 @@ const Index = () => {
   const handleRefresh = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['nse-stocks'] });
   }, [queryClient]);
+
+  // Adaptive auto-refresh based on market hours
+  const { 
+    enabled: autoRefreshEnabled, 
+    session: marketSession, 
+    label: sessionLabel, 
+    emoji: sessionEmoji,
+    handleRefreshSuccess,
+    handleRefreshFailure,
+    reEnableAutoRefresh,
+  } = useAdaptiveAutoRefresh(handleRefresh);
+
+  // Track fetch success/failure for adaptive refresh
+  useEffect(() => {
+    if (isError) {
+      handleRefreshFailure();
+    } else if (data && !isFetching) {
+      handleRefreshSuccess();
+    }
+  }, [isError, data, isFetching, handleRefreshFailure, handleRefreshSuccess]);
 
   const handleTabChange = useCallback((tab: TabType) => {
     setActiveTab(tab);
@@ -96,6 +117,10 @@ const Index = () => {
         source={data?.source}
         onRefresh={handleRefresh}
         onOpenPortfolio={handleOpenPortfolio}
+        marketSession={marketSession}
+        sessionLabel={sessionLabel}
+        sessionEmoji={sessionEmoji}
+        autoRefreshEnabled={autoRefreshEnabled}
       />
 
       {/* Main Content */}
@@ -166,7 +191,9 @@ const Index = () => {
         {/* Footer Info */}
         <footer className="mt-8 text-center">
           <p className="text-xs text-muted-foreground">
-            Data refreshes automatically every 10 seconds • 
+            {autoRefreshEnabled 
+              ? `Auto-refresh active ${sessionEmoji} ${sessionLabel}` 
+              : 'Auto-refresh disabled'} • 
             {data?.source === 'simulated' 
               ? ' Using simulated data for demonstration' 
               : ' Live data from NSE India'}

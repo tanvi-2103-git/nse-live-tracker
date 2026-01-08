@@ -13,6 +13,7 @@ import { AlertsPanel } from '@/components/dashboard/AlertsPanel';
 import { NewsFeed } from '@/components/dashboard/NewsFeed';
 import { PortfolioTracker } from '@/components/dashboard/PortfolioTracker';
 import { ErrorState } from '@/components/dashboard/ErrorState';
+import { MarketAssistant } from '@/components/chatbot/MarketAssistant';
 import { useStockData } from '@/hooks/useStockData';
 import { useWatchlist } from '@/hooks/useWatchlist';
 import { usePriceAlerts } from '@/hooks/usePriceAlerts';
@@ -229,6 +230,13 @@ const Index = () => {
           <PortfolioTracker stocks={data?.stocks || []} />
         </DialogContent>
       </Dialog>
+
+      {/* Market Research Assistant Chatbot */}
+      <MarketAssistant
+        currentStock={selectedStock}
+        marketSession={marketSession}
+        pageContext={isDetailModalOpen ? `Stock Detail: ${selectedStock?.symbol}` : 'Dashboard'}
+      />
     </div>
   );
 };

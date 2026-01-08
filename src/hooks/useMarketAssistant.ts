@@ -11,11 +11,21 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
+export interface MarketOverviewContext {
+  indexValue?: number;
+  indexChange?: number;
+  indexChangePercent?: number;
+  advancers?: number;
+  decliners?: number;
+  unchanged?: number;
+}
+
 export interface ChatContext {
   stock?: Stock;
   research?: ResearchPrediction;
   marketState?: string;
   pageContext?: string;
+  marketOverview?: MarketOverviewContext;
 }
 
 interface UseMarketAssistantReturn {

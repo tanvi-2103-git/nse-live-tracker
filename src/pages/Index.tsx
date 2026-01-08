@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/components/dashboard/Header';
 import { SearchBar } from '@/components/dashboard/SearchBar';
@@ -14,6 +14,7 @@ import { NewsFeed } from '@/components/dashboard/NewsFeed';
 import { PortfolioTracker } from '@/components/dashboard/PortfolioTracker';
 import { ErrorState } from '@/components/dashboard/ErrorState';
 import { MarketAssistant } from '@/components/chatbot/MarketAssistant';
+import { MarketOverviewContext } from '@/hooks/useMarketAssistant';
 import { useStockData } from '@/hooks/useStockData';
 import { useWatchlist } from '@/hooks/useWatchlist';
 import { usePriceAlerts } from '@/hooks/usePriceAlerts';
@@ -60,6 +61,24 @@ const Index = () => {
     handleRefreshFailure,
     reEnableAutoRefresh,
   } = useAdaptiveAutoRefresh(handleRefresh);
+
+  // Compute market overview context for chatbot
+  const marketOverview = useMemo<MarketOverviewContext | null>(() => {
+    if (!data?.stocks?.length) return null;
+    
+    const gainers = data.stocks.filter((s) => s.pChange > 0).length;
+    const losers = data.stocks.filter((s) => s.pChange < 0).length;
+    const unchanged = data.stocks.length - gainers - losers;
+    
+    return {
+      indexValue: data.indexValue,
+      indexChange: data.indexChange,
+      indexChangePercent: data.indexChangePercent,
+      advancers: gainers,
+      decliners: losers,
+      unchanged,
+    };
+  }, [data]);
 
   // Track fetch success/failure for adaptive refresh
   useEffect(() => {
@@ -236,6 +255,7 @@ const Index = () => {
         currentStock={selectedStock}
         marketSession={marketSession}
         pageContext={isDetailModalOpen ? `Stock Detail: ${selectedStock?.symbol}` : 'Dashboard'}
+        marketOverview={marketOverview}
       />
     </div>
   );

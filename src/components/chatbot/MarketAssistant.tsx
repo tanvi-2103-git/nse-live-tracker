@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { useMarketAssistant, ChatContext } from '@/hooks/useMarketAssistant';
+import { useMarketAssistant, ChatContext, MarketOverviewContext } from '@/hooks/useMarketAssistant';
 import { ChatMessage } from './ChatMessage';
 import { Stock } from '@/types/stock';
 import { ResearchPrediction } from '@/types/prediction';
@@ -16,20 +16,22 @@ interface MarketAssistantProps {
   currentResearch?: ResearchPrediction | null;
   marketSession?: string;
   pageContext?: string;
+  marketOverview?: MarketOverviewContext | null;
 }
 
 const SUGGESTED_QUESTIONS = [
-  { icon: TrendingUp, text: "Explain today's price action", shortText: "Price action" },
-  { icon: BarChart3, text: "What does the RSI indicate here?", shortText: "RSI meaning" },
-  { icon: AlertTriangle, text: "What risks should I watch?", shortText: "Risk factors" },
-  { icon: HelpCircle, text: "Is this trend strong or weak?", shortText: "Trend strength" },
+  { icon: TrendingUp, text: "How is this stock performing relative to the market?", shortText: "vs Market" },
+  { icon: BarChart3, text: "What does market breadth indicate today?", shortText: "Breadth" },
+  { icon: AlertTriangle, text: "What market and stock-level risks should I watch?", shortText: "Risk factors" },
+  { icon: HelpCircle, text: "Is this move stock-specific or market-driven?", shortText: "Move type" },
 ];
 
 export function MarketAssistant({ 
   currentStock, 
   currentResearch, 
   marketSession = 'UNKNOWN',
-  pageContext = 'Dashboard'
+  pageContext = 'Dashboard',
+  marketOverview
 }: MarketAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -59,8 +61,12 @@ export function MarketAssistant({
       newContext.research = currentResearch;
     }
     
+    if (marketOverview) {
+      newContext.marketOverview = marketOverview;
+    }
+    
     setContext(newContext);
-  }, [currentStock, currentResearch, marketSession, pageContext, setContext]);
+  }, [currentStock, currentResearch, marketSession, pageContext, marketOverview, setContext]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -89,7 +95,7 @@ export function MarketAssistant({
     inputRef.current?.focus();
   }, []);
 
-  const hasContext = !!(currentStock || currentResearch);
+  const hasContext = !!(currentStock || currentResearch || marketOverview);
 
   return (
     <>
@@ -139,12 +145,21 @@ export function MarketAssistant({
               )}
             </div>
 
-            {/* Context Badge */}
+            {/* Context Badges */}
             {hasContext && (
-              <div className="flex items-center gap-2 mt-3">
-                <Badge variant="outline" className="text-xs bg-primary/10 border-primary/30 text-primary">
-                  {currentStock ? `Analyzing: ${currentStock.symbol}` : 'Context Active'}
-                </Badge>
+              <div className="flex flex-wrap items-center gap-2 mt-3">
+                {marketOverview && (
+                  <Badge variant="outline" className="text-xs bg-blue-500/10 border-blue-500/30 text-blue-400">
+                    📊 Market: {marketOverview.indexChangePercent !== undefined 
+                      ? `${marketOverview.indexChangePercent >= 0 ? '+' : ''}${marketOverview.indexChangePercent.toFixed(2)}%`
+                      : 'Active'}
+                  </Badge>
+                )}
+                {currentStock && (
+                  <Badge variant="outline" className="text-xs bg-primary/10 border-primary/30 text-primary">
+                    {currentStock.symbol}: {currentStock.pChange >= 0 ? '+' : ''}{currentStock.pChange?.toFixed(2)}%
+                  </Badge>
+                )}
                 {marketSession && (
                   <Badge 
                     variant="outline" 

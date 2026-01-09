@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.market-assistant]
 verify_jwt = false
+
+[functions.stock-assistant]
+verify_jwt = false

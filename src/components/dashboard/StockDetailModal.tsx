@@ -30,6 +30,9 @@ import { Stock } from '@/types/stock';
 import { cn } from '@/lib/utils';
 import { ResearchVerdictCard } from './ResearchVerdictCard';
 import { CandlestickChart } from './CandlestickChart';
+import { StockAssistant } from '@/components/chatbot/StockAssistant';
+import { useResearchPrediction } from '@/hooks/useResearchPrediction';
+import { MarketOverviewContext } from '@/hooks/useMarketAssistant';
 
 type ChartMode = 'intraday' | 'daily' | 'weekly';
 
@@ -40,6 +43,8 @@ interface StockDetailModalProps {
   isInWatchlist: boolean;
   onToggleWatchlist: (symbol: string) => void;
   onAddAlert: (symbol: string, companyName: string) => void;
+  marketSession?: string;
+  marketOverview?: MarketOverviewContext | null;
 }
 
 export function StockDetailModal({
@@ -49,9 +54,14 @@ export function StockDetailModal({
   isInWatchlist,
   onToggleWatchlist,
   onAddAlert,
+  marketSession,
+  marketOverview,
 }: StockDetailModalProps) {
   const [chartMode, setChartMode] = useState<ChartMode>('intraday');
   const [showCandlestick, setShowCandlestick] = useState(false);
+  
+  // Get research prediction for Stock Assistant context
+  const { prediction: researchPrediction } = useResearchPrediction();
 
   // Generate detailed intraday chart data - always call hook, guard inside
   const chartData = useMemo(() => {
@@ -297,6 +307,14 @@ export function StockDetailModal({
 
         {/* AI Equity Research */}
         <ResearchVerdictCard stock={stock} />
+
+        {/* Stock Assistant Chatbot */}
+        <StockAssistant 
+          stock={stock}
+          research={researchPrediction}
+          marketSession={marketSession}
+          marketOverview={marketOverview}
+        />
       </DialogContent>
     </Dialog>
   );

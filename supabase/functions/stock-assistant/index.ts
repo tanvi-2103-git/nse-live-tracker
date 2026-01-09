@@ -1,0 +1,268 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+const SYSTEM_PROMPT = `You are a junior equity research analyst at an institutional investment firm, specializing in the Indian stock market (NSE/BSE).
+
+Your role is to explain research findings and market behavior like a knowledgeable analyst briefing a portfolio manager — professional, data-driven, and context-aware.
+
+CRITICAL ANALYSIS FRAMEWORK:
+
+1. NEVER analyze a stock in isolation:
+   - Always reference the broader market environment first
+   - Compare stock performance relative to the Nifty 50 index
+   - Distinguish between stock-specific moves and market-driven moves
+
+2. MANDATORY RESPONSE STRUCTURE:
+   
+   **Market Context** (1-2 lines)
+   Brief summary of index direction, breadth, and volatility state.
+   
+   **Stock-Specific Analysis**
+   Address the user's question with data-backed observations.
+   Reference support/resistance, volume, and technical indicators when relevant.
+   
+   **Conditional Outlook**
+   Frame scenarios: "If market breadth remains positive, stock may..."
+   Use probability language: "approximately 60% likelihood", "tends to historically"
+   
+   **Risk-Aware Conclusion**
+   Acknowledge uncertainties and downside risks.
+   Incorporate both stock-level and market-level risk factors.
+
+3. ALIGN WITH AI RESEARCH:
+   - If AI research data is provided, your explanations should be consistent with it
+   - Explain the research verdict in accessible terms
+   - Clarify technical indicator interpretations (RSI, MACD, Moving Averages)
+
+4. PROFESSIONAL LANGUAGE:
+   - "Relative strength" / "Relative weakness"
+   - "Outperforming the benchmark" / "Underperforming amid sector rotation"
+   - "Market-supported rally" / "Divergence from broader index"
+   - "Risk-reward skewed to the downside/upside"
+   - "Volume confirms / contradicts price action"
+   - "Defensive positioning warranted"
+
+5. PROBABILITY-BASED PHRASING:
+   - Never use "will", prefer "may", "could", "tends to"
+   - Frame confidence levels: "high probability", "modest likelihood"
+   - Scenario-based: "Base case suggests...", "If volume sustains..."
+
+6. FORBIDDEN:
+   - "Buy now" / "Sell immediately" / Any trading instructions
+   - "Target price will be X" / Guaranteed outcomes
+   - Emotional language, hype, or urgency
+   - Long-term investment advice
+   - Judging stocks without referencing market context
+
+7. WHEN DATA IS LIMITED:
+   Say: "Based on available stock-level data and limited market context..."
+   Be honest about low certainty
+
+TONE: Calm, institutional, analytical, educational. Like a junior analyst explaining research to a senior PM.`;
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { question, context, conversationHistory } = await req.json();
+
+    if (!question || typeof question !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Question is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY is not configured');
+    }
+
+    // Build comprehensive context for stock analysis
+    let contextualMessage = question;
+    
+    if (context) {
+      const contextParts: string[] = [];
+      
+      // MARKET CONTEXT - Critical for relative analysis
+      if (context.marketOverview) {
+        const m = context.marketOverview;
+        const indexDirection = m.indexChangePercent >= 0 ? 'positive' : 'negative';
+        const breadthRatio = m.advancers && m.decliners 
+          ? (m.advancers / (m.advancers + m.decliners) * 100).toFixed(1)
+          : null;
+        
+        let marketBreadthDesc = 'Data unavailable';
+        if (breadthRatio) {
+          if (parseFloat(breadthRatio) > 65) marketBreadthDesc = 'Broad-based buying (strong)';
+          else if (parseFloat(breadthRatio) > 50) marketBreadthDesc = 'More advancers than decliners';
+          else if (parseFloat(breadthRatio) > 35) marketBreadthDesc = 'More decliners than advancers';
+          else marketBreadthDesc = 'Broad-based selling (weak)';
+        }
+
+        let volatilityState = 'Normal';
+        if (Math.abs(m.indexChangePercent) > 2) volatilityState = 'Elevated';
+        if (Math.abs(m.indexChangePercent) > 3) volatilityState = 'High';
+
+        contextParts.push(`=== MARKET ENVIRONMENT ===
+Index: Nifty 50
+Value: ${m.indexValue?.toLocaleString('en-IN')}
+Day Change: ${m.indexChange >= 0 ? '+' : ''}${m.indexChange?.toFixed(2)} (${m.indexChangePercent >= 0 ? '+' : ''}${m.indexChangePercent?.toFixed(2)}%)
+Direction: ${indexDirection.toUpperCase()}
+Breadth: ${m.advancers || 'N/A'} advancers | ${m.decliners || 'N/A'} decliners | ${m.unchanged || 'N/A'} unchanged
+Breadth Interpretation: ${marketBreadthDesc}
+Volatility: ${volatilityState}
+Session: ${context.marketState || 'Unknown'}
+
+>>> USE THIS TO FRAME ALL ANALYSIS <<<`);
+      } else {
+        contextParts.push(`=== MARKET ENVIRONMENT ===
+Status: Limited market-wide context available.
+Note: Relative performance cannot be fully assessed without index data.`);
+      }
+      
+      // STOCK DATA
+      if (context.stock) {
+        const s = context.stock;
+        
+        // Calculate relative performance
+        let relativePerf = 'Cannot calculate (no index data)';
+        let alpha = 0;
+        if (context.marketOverview?.indexChangePercent !== undefined) {
+          alpha = (s.pChange || 0) - context.marketOverview.indexChangePercent;
+          if (alpha > 1.5) relativePerf = `OUTPERFORMING index by ${alpha.toFixed(2)}% (strong relative strength)`;
+          else if (alpha > 0.5) relativePerf = `Slightly outperforming index (+${alpha.toFixed(2)}%)`;
+          else if (alpha > -0.5) relativePerf = `In-line with index (alpha: ${alpha >= 0 ? '+' : ''}${alpha.toFixed(2)}%)`;
+          else if (alpha > -1.5) relativePerf = `Slightly underperforming index (${alpha.toFixed(2)}%)`;
+          else relativePerf = `UNDERPERFORMING index by ${Math.abs(alpha).toFixed(2)}% (relative weakness)`;
+        }
+        
+        // 52-week position
+        const weekPos = s.yearHigh && s.yearLow && s.lastPrice
+          ? ((s.lastPrice - s.yearLow) / (s.yearHigh - s.yearLow) * 100).toFixed(1)
+          : null;
+        
+        contextParts.push(`=== STOCK DATA: ${s.symbol} ===
+Company: ${s.companyName}
+Current Price: ₹${s.lastPrice?.toLocaleString('en-IN')}
+Day Change: ${s.change >= 0 ? '+' : ''}${s.change?.toFixed(2)} (${s.pChange >= 0 ? '+' : ''}${s.pChange?.toFixed(2)}%)
+
+RELATIVE PERFORMANCE: ${relativePerf}
+
+Price Range Today: ₹${s.dayLow} - ₹${s.dayHigh}
+52-Week Range: ₹${s.yearLow} - ₹${s.yearHigh}
+${weekPos ? `52-Week Position: ${weekPos}% above yearly low` : ''}
+
+Volume: ${s.totalTradedVolume?.toLocaleString('en-IN')} shares
+Value Traded: ₹${s.totalTradedValue?.toFixed(2)} Cr
+
+30-Day Performance: ${s.perChange30d >= 0 ? '+' : ''}${s.perChange30d?.toFixed(2)}%
+365-Day Performance: ${s.perChange365d >= 0 ? '+' : ''}${s.perChange365d?.toFixed(2)}%`);
+      }
+
+      // AI RESEARCH DATA
+      if (context.research) {
+        const r = context.research;
+        contextParts.push(`=== AI RESEARCH FINDINGS ===
+Verdict: ${r.verdict?.trend || 'N/A'} (${r.verdict?.outlookHorizon || 'N/A'})
+Analyst Bias: ${r.verdict?.analystBias || 'N/A'}
+Confidence: ${r.verdict?.confidencePercent || 'N/A'}%
+Reasoning: ${r.verdict?.reasoningSentence || 'N/A'}
+
+Support Level: ₹${r.priceLevels?.support || 'N/A'}
+Resistance Level: ₹${r.priceLevels?.resistance || 'N/A'}
+Trend Strength: ${r.priceLevels?.trendStrength || 'N/A'}
+
+Technical Indicators:
+- RSI: ${r.technicalIndicators?.rsiStatus || 'N/A'} — ${r.technicalIndicators?.rsiReasoning || ''}
+- MACD: ${r.technicalIndicators?.macdSignal || 'N/A'} — ${r.technicalIndicators?.macdReasoning || ''}
+- Overall Bias: ${r.technicalIndicators?.overallBias || 'N/A'}
+
+Likely Outcome: ${r.likelyOutcome || 'N/A'}
+
+>>> ALIGN YOUR EXPLANATIONS WITH THIS RESEARCH <<<`);
+      }
+
+      if (contextParts.length > 0) {
+        contextualMessage = `[STOCK ANALYSIS CONTEXT]\n\n${contextParts.join('\n\n')}\n\n[USER QUESTION]\n${question}`;
+      }
+    }
+
+    // Build messages array
+    const messages = [
+      { role: 'system', content: SYSTEM_PROMPT }
+    ];
+
+    // Add conversation history (last 8 messages for focused context)
+    if (conversationHistory && Array.isArray(conversationHistory)) {
+      const recentHistory = conversationHistory.slice(-8);
+      messages.push(...recentHistory);
+    }
+
+    messages.push({ role: 'user', content: contextualMessage });
+
+    console.log('Stock Assistant: Processing question with full context');
+
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages,
+        max_tokens: 800,
+        temperature: 0.6,
+      }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: 'Rate limit exceeded. Please wait a moment.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: 'Service temporarily unavailable.' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      const errorText = await response.text();
+      console.error('AI gateway error:', response.status, errorText);
+      throw new Error('Failed to get AI response');
+    }
+
+    const data = await response.json();
+    const assistantMessage = data.choices?.[0]?.message?.content;
+
+    if (!assistantMessage) {
+      throw new Error('No response from AI');
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        message: assistantMessage,
+        timestamp: new Date().toISOString()
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Stock assistant error:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'An unexpected error occurred'
+      }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});

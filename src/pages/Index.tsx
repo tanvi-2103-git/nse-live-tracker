@@ -229,6 +229,8 @@ const Index = () => {
         isInWatchlist={selectedStock ? isInWatchlist(selectedStock.symbol) : false}
         onToggleWatchlist={toggleWatchlist}
         onAddAlert={handleOpenAlertModal}
+        marketSession={marketSession}
+        marketOverview={marketOverview}
       />
 
       {/* Add Alert Modal */}

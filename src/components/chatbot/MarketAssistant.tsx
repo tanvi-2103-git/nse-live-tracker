@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { MessageCircle, X, Send, Trash2, Sparkles, TrendingUp, AlertTriangle, HelpCircle, BarChart3, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Send, Trash2, Sparkles, TrendingUp, AlertTriangle, HelpCircle, BarChart3, Loader2, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -10,6 +10,7 @@ import { ChatMessage } from './ChatMessage';
 import { Stock } from '@/types/stock';
 import { ResearchPrediction } from '@/types/prediction';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
 interface MarketAssistantProps {
   currentStock?: Stock | null;
@@ -43,7 +44,8 @@ export function MarketAssistant({
     isLoading, 
     sendMessage, 
     clearChat, 
-    setContext 
+    setContext,
+    isAuthenticated 
   } = useMarketAssistant();
 
   // Update context when props change
@@ -258,6 +260,20 @@ export function MarketAssistant({
 
           {/* Input Area */}
           <div className="p-4 border-t border-border bg-card">
+            {!isAuthenticated ? (
+              <div className="text-center py-2">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Sign in to save your chat history across devices
+                </p>
+                <Link to="/auth">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <LogIn className="w-4 h-4" />
+                    Sign in to save
+                  </Button>
+                </Link>
+              </div>
+            ) : null}
+            
             <div className="flex gap-2">
               <Textarea
                 ref={inputRef}

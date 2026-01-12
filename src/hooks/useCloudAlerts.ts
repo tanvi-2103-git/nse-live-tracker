@@ -23,17 +23,23 @@ export function useCloudAlerts(stocks: Stock[]) {
     audioRef.current = new Audio(NOTIFICATION_SOUND);
   }, []);
 
-  // Load alerts from cloud when user logs in
+  // Load alerts from cloud when user logs in, clear on logout
   useEffect(() => {
     if (user) {
       loadCloudAlerts();
+    } else {
+      // Clear alerts on logout
+      setAlerts([]);
+      localStorage.removeItem(LOCAL_ALERTS_KEY);
     }
   }, [user]);
 
-  // Save to localStorage for offline access
+  // Save to localStorage for offline access (only when logged in)
   useEffect(() => {
-    localStorage.setItem(LOCAL_ALERTS_KEY, JSON.stringify(alerts));
-  }, [alerts]);
+    if (user) {
+      localStorage.setItem(LOCAL_ALERTS_KEY, JSON.stringify(alerts));
+    }
+  }, [alerts, user]);
 
   // Check notification permission
   useEffect(() => {

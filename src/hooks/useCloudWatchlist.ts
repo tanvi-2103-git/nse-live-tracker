@@ -14,17 +14,23 @@ export function useCloudWatchlist() {
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load watchlist from cloud when user logs in
+  // Load watchlist from cloud when user logs in, clear on logout
   useEffect(() => {
     if (user) {
       loadCloudWatchlist();
+    } else {
+      // Clear watchlist on logout
+      setWatchlist([]);
+      localStorage.removeItem(LOCAL_WATCHLIST_KEY);
     }
   }, [user]);
 
-  // Sync to localStorage for offline/guest access
+  // Sync to localStorage for offline/guest access (only when logged in)
   useEffect(() => {
-    localStorage.setItem(LOCAL_WATCHLIST_KEY, JSON.stringify(watchlist));
-  }, [watchlist]);
+    if (user) {
+      localStorage.setItem(LOCAL_WATCHLIST_KEY, JSON.stringify(watchlist));
+    }
+  }, [watchlist, user]);
 
   const loadCloudWatchlist = async () => {
     if (!user) return;

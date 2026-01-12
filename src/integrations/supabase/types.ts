@@ -62,6 +62,36 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_messages: {
+        Row: {
+          assistant_type: string
+          created_at: string | null
+          id: string
+          message: string
+          role: string
+          stock_symbol: string | null
+          user_id: string
+        }
+        Insert: {
+          assistant_type: string
+          created_at?: string | null
+          id?: string
+          message: string
+          role: string
+          stock_symbol?: string | null
+          user_id: string
+        }
+        Update: {
+          assistant_type?: string
+          created_at?: string | null
+          id?: string
+          message?: string
+          role?: string
+          stock_symbol?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       portfolio: {
         Row: {
           buy_date: string
@@ -160,6 +190,54 @@ export type Database = {
           email?: string | null
           id?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      research_history: {
+        Row: {
+          created_at: string | null
+          id: string
+          research_json: Json
+          stock_symbol: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          research_json: Json
+          stock_symbol: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          research_json?: Json
+          stock_symbol?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          created_at: string | null
+          experience_level: string | null
+          refresh_mode: string | null
+          theme: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          experience_level?: string | null
+          refresh_mode?: string | null
+          theme?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          experience_level?: string | null
+          refresh_mode?: string | null
+          theme?: string | null
           user_id?: string
         }
         Relationships: []

@@ -11,7 +11,8 @@ import {
   HelpCircle,
   ChevronDown,
   ChevronUp,
-  Sparkles
+  Sparkles,
+  LogIn
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -24,6 +25,7 @@ import { Stock } from '@/types/stock';
 import { ResearchPrediction } from '@/types/prediction';
 import { MarketOverviewContext } from '@/hooks/useMarketAssistant';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
 interface StockAssistantProps {
   stock: Stock;
@@ -62,7 +64,8 @@ export function StockAssistant({
     isLoading, 
     sendMessage, 
     clearChat,
-    updateContext 
+    updateContext,
+    isAuthenticated 
   } = useStockAssistant(context);
 
   // Update context when props change
@@ -251,6 +254,17 @@ export function StockAssistant({
 
               {/* Input */}
               <div className="p-3 border-t border-border bg-card/50">
+                {!isAuthenticated && (
+                  <div className="text-center py-2 mb-2">
+                    <Link to="/auth">
+                      <Button variant="ghost" size="sm" className="gap-2 text-xs text-muted-foreground hover:text-foreground">
+                        <LogIn className="w-3 h-3" />
+                        Sign in to save chat
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+                
                 <div className="flex gap-2">
                   <Textarea
                     ref={inputRef}

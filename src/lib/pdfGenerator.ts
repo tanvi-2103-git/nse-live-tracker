@@ -1,11 +1,15 @@
 import jsPDF from 'jspdf';
 import { ResearchPrediction } from '@/types/prediction';
 import { Stock } from '@/types/stock';
+import { sanitizeForPDF } from './pdf/fontLoader';
 
 export async function generateResearchPDF(prediction: ResearchPrediction, stock: Stock) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   let y = 20;
+
+  // Helper function to sanitize text
+  const clean = (text: string | undefined | null): string => sanitizeForPDF(text);
 
   // Helper function to check page break
   const checkPageBreak = (neededSpace: number = 30) => {
@@ -18,7 +22,7 @@ export async function generateResearchPDF(prediction: ResearchPrediction, stock:
   // Cover/Title
   doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
-  doc.text(`${prediction.symbol}`, pageWidth / 2, y, { align: 'center' });
+  doc.text(clean(prediction.symbol), pageWidth / 2, y, { align: 'center' });
   y += 8;
   
   doc.setFontSize(12);
@@ -27,7 +31,7 @@ export async function generateResearchPDF(prediction: ResearchPrediction, stock:
   y += 6;
 
   doc.setFontSize(10);
-  doc.text(`${prediction.companyName}`, pageWidth / 2, y, { align: 'center' });
+  doc.text(clean(prediction.companyName), pageWidth / 2, y, { align: 'center' });
   y += 6;
   doc.text(`Generated: ${new Date(prediction.timestamp).toLocaleString()}`, pageWidth / 2, y, { align: 'center' });
   y += 12;
@@ -45,12 +49,12 @@ export async function generateResearchPDF(prediction: ResearchPrediction, stock:
   
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Current Price: ₹${stock.lastPrice.toLocaleString()}`, 20, y);
-  doc.text(`52-Week Range: ₹${stock.yearLow.toLocaleString()} - ₹${stock.yearHigh.toLocaleString()}`, 100, y);
+  doc.text(`Current Price: Rs.${stock.lastPrice.toLocaleString()}`, 20, y);
+  doc.text(`52-Week Range: Rs.${stock.yearLow.toLocaleString()} - Rs.${stock.yearHigh.toLocaleString()}`, 100, y);
   y += 6;
-  doc.text(`Trend: ${prediction.verdict.trend}`, 20, y);
+  doc.text(`Trend: ${clean(prediction.verdict.trend)}`, 20, y);
   doc.text(`Confidence: ${prediction.verdict.confidencePercent}%`, 70, y);
-  doc.text(`Analyst Bias: ${prediction.verdict.analystBias}`, 120, y);
+  doc.text(`Analyst Bias: ${clean(prediction.verdict.analystBias)}`, 120, y);
   y += 10;
 
   // Verdict Section
@@ -60,7 +64,7 @@ export async function generateResearchPDF(prediction: ResearchPrediction, stock:
   y += 6;
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  const verdictLines = doc.splitTextToSize(prediction.verdict.reasoningSentence, pageWidth - 40);
+  const verdictLines = doc.splitTextToSize(clean(prediction.verdict.reasoningSentence), pageWidth - 40);
   doc.text(verdictLines, 20, y);
   y += verdictLines.length * 4 + 6;
 
@@ -69,9 +73,9 @@ export async function generateResearchPDF(prediction: ResearchPrediction, stock:
   doc.text('KEY LEVELS', 20, y);
   y += 6;
   doc.setFont('helvetica', 'normal');
-  doc.text(`Support: ₹${prediction.priceLevels.support?.toLocaleString() || 'N/A'}`, 20, y);
-  doc.text(`Resistance: ₹${prediction.priceLevels.resistance?.toLocaleString() || 'N/A'}`, 80, y);
-  doc.text(`Trend Strength: ${prediction.priceLevels.trendStrength}`, 140, y);
+  doc.text(`Support: Rs.${prediction.priceLevels.support?.toLocaleString() || 'N/A'}`, 20, y);
+  doc.text(`Resistance: Rs.${prediction.priceLevels.resistance?.toLocaleString() || 'N/A'}`, 80, y);
+  doc.text(`Trend Strength: ${clean(prediction.priceLevels.trendStrength)}`, 140, y);
   y += 10;
 
   // Technical Indicators Section
@@ -86,28 +90,28 @@ export async function generateResearchPDF(prediction: ResearchPrediction, stock:
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     
-    doc.text(`RSI Status: ${indicators.rsiStatus}`, 20, y);
-    doc.text(`MACD Signal: ${indicators.macdSignal}`, 80, y);
-    doc.text(`Overall Bias: ${indicators.overallBias}`, 140, y);
+    doc.text(`RSI Status: ${clean(indicators.rsiStatus)}`, 20, y);
+    doc.text(`MACD Signal: ${clean(indicators.macdSignal)}`, 80, y);
+    doc.text(`Overall Bias: ${clean(indicators.overallBias)}`, 140, y);
     y += 6;
     
-    const rsiLines = doc.splitTextToSize(`RSI: ${indicators.rsiReasoning}`, pageWidth - 40);
+    const rsiLines = doc.splitTextToSize(`RSI: ${clean(indicators.rsiReasoning)}`, pageWidth - 40);
     doc.text(rsiLines, 20, y);
     y += rsiLines.length * 4 + 2;
     
-    const macdLines = doc.splitTextToSize(`MACD: ${indicators.macdReasoning}`, pageWidth - 40);
+    const macdLines = doc.splitTextToSize(`MACD: ${clean(indicators.macdReasoning)}`, pageWidth - 40);
     doc.text(macdLines, 20, y);
     y += macdLines.length * 4 + 2;
     
-    const shortMALines = doc.splitTextToSize(`20-Day MA: ${indicators.shortMA}`, pageWidth - 40);
+    const shortMALines = doc.splitTextToSize(`20-Day MA: ${clean(indicators.shortMA)}`, pageWidth - 40);
     doc.text(shortMALines, 20, y);
     y += shortMALines.length * 4 + 2;
     
-    const medMALines = doc.splitTextToSize(`50-Day MA: ${indicators.mediumMA}`, pageWidth - 40);
+    const medMALines = doc.splitTextToSize(`50-Day MA: ${clean(indicators.mediumMA)}`, pageWidth - 40);
     doc.text(medMALines, 20, y);
     y += medMALines.length * 4 + 2;
     
-    const longMALines = doc.splitTextToSize(`200-Day MA: ${indicators.longMA}`, pageWidth - 40);
+    const longMALines = doc.splitTextToSize(`200-Day MA: ${clean(indicators.longMA)}`, pageWidth - 40);
     doc.text(longMALines, 20, y);
     y += longMALines.length * 4 + 8;
   }
@@ -120,7 +124,7 @@ export async function generateResearchPDF(prediction: ResearchPrediction, stock:
   y += 6;
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  const summaryLines = doc.splitTextToSize(prediction.executiveSummary, pageWidth - 40);
+  const summaryLines = doc.splitTextToSize(clean(prediction.executiveSummary), pageWidth - 40);
   
   for (let i = 0; i < summaryLines.length; i++) {
     checkPageBreak(6);
@@ -141,7 +145,7 @@ export async function generateResearchPDF(prediction: ResearchPrediction, stock:
   if (prediction.technicalStructure) {
     Object.entries(prediction.technicalStructure).forEach(([key, value]) => {
       checkPageBreak(8);
-      const lines = doc.splitTextToSize(`• ${value}`, pageWidth - 45);
+      const lines = doc.splitTextToSize(`- ${clean(String(value))}`, pageWidth - 45);
       doc.text(lines, 25, y);
       y += lines.length * 4 + 2;
     });
@@ -161,15 +165,16 @@ export async function generateResearchPDF(prediction: ResearchPrediction, stock:
     Object.values(prediction.scenarios).forEach((s: any) => {
       checkPageBreak(15);
       doc.setFont('helvetica', 'bold');
-      doc.text(`${s.name} (${s.probability})`, 20, y);
+      doc.text(`${clean(s.name)} (${clean(s.probability)})`, 20, y);
       y += 5;
       doc.setFont('helvetica', 'normal');
-      const behaviorLines = doc.splitTextToSize(s.expectedBehavior, pageWidth - 45);
+      const behaviorLines = doc.splitTextToSize(clean(s.expectedBehavior), pageWidth - 45);
       doc.text(behaviorLines, 25, y);
       y += behaviorLines.length * 4 + 2;
       
       if (s.keyTriggers && s.keyTriggers.length > 0) {
-        doc.text(`Key Triggers: ${s.keyTriggers.join(', ')}`, 25, y);
+        const triggersText = s.keyTriggers.map((t: string) => clean(t)).join(', ');
+        doc.text(`Key Triggers: ${triggersText}`, 25, y);
         y += 6;
       }
     });
@@ -188,7 +193,7 @@ export async function generateResearchPDF(prediction: ResearchPrediction, stock:
   if (prediction.riskDashboard) {
     prediction.riskDashboard.forEach((risk) => {
       checkPageBreak(8);
-      doc.text(`• ${risk.type} (${risk.level}): ${risk.description}`, 25, y);
+      doc.text(`- ${clean(risk.type)} (${clean(risk.level)}): ${clean(risk.description)}`, 25, y);
       y += 5;
     });
   }
@@ -205,11 +210,11 @@ export async function generateResearchPDF(prediction: ResearchPrediction, stock:
     doc.setFont('helvetica', 'normal');
     
     const { shortTerm, mediumTerm, longTerm } = prediction.timeframeOutlooks;
-    doc.text(`Short-term (${shortTerm.days}): ${shortTerm.bias.toUpperCase()} - ${shortTerm.outlook}`, 20, y);
+    doc.text(`Short-term (${clean(shortTerm.days)}): ${shortTerm.bias.toUpperCase()} - ${clean(shortTerm.outlook)}`, 20, y);
     y += 5;
-    doc.text(`Medium-term (${mediumTerm.weeks}): ${mediumTerm.bias.toUpperCase()} - ${mediumTerm.outlook}`, 20, y);
+    doc.text(`Medium-term (${clean(mediumTerm.weeks)}): ${mediumTerm.bias.toUpperCase()} - ${clean(mediumTerm.outlook)}`, 20, y);
     y += 5;
-    doc.text(`Long-term (${longTerm.months}): ${longTerm.bias.toUpperCase()} - ${longTerm.outlook}`, 20, y);
+    doc.text(`Long-term (${clean(longTerm.months)}): ${longTerm.bias.toUpperCase()} - ${clean(longTerm.outlook)}`, 20, y);
     y += 8;
   }
 
@@ -221,7 +226,7 @@ export async function generateResearchPDF(prediction: ResearchPrediction, stock:
   y += 6;
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  const conclusionLines = doc.splitTextToSize(prediction.conclusion, pageWidth - 40);
+  const conclusionLines = doc.splitTextToSize(clean(prediction.conclusion), pageWidth - 40);
   for (let i = 0; i < conclusionLines.length; i++) {
     checkPageBreak(6);
     doc.text(conclusionLines[i], 20, y);
@@ -240,7 +245,7 @@ export async function generateResearchPDF(prediction: ResearchPrediction, stock:
   doc.text('DISCLAIMER', 20, y);
   y += 5;
   doc.setFont('helvetica', 'normal');
-  const disclaimerLines = doc.splitTextToSize(prediction.legalDisclaimer, pageWidth - 40);
+  const disclaimerLines = doc.splitTextToSize(clean(prediction.legalDisclaimer), pageWidth - 40);
   for (let i = 0; i < disclaimerLines.length; i++) {
     checkPageBreak(5);
     doc.text(disclaimerLines[i], 20, y);

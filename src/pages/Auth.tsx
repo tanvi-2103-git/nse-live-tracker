@@ -83,6 +83,8 @@ export default function Auth() {
     if (error) {
       if (error.message.includes('already registered')) {
         toast.error('This email is already registered. Please sign in instead.');
+      } else if (error.message.toLowerCase().includes('leaked') || error.message.toLowerCase().includes('pwned')) {
+        toast.error('This password was found in a known data breach. Please choose a stronger, unique password.');
       } else {
         toast.error(error.message);
       }

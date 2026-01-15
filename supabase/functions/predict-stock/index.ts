@@ -1,27 +1,36 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface StockData {
-  symbol: string;
-  companyName: string;
-  lastPrice: number;
-  open: number;
-  dayHigh: number;
-  dayLow: number;
-  previousClose: number;
-  change: number;
-  pChange: number;
-  totalTradedVolume: number;
-  yearHigh: number;
-  yearLow: number;
-  perChange30d: number;
-  perChange365d: number;
-}
+// === INPUT VALIDATION SCHEMAS ===
+const StockDataSchema = z.object({
+  symbol: z.string().min(1, 'Symbol is required').max(20, 'Symbol too long'),
+  companyName: z.string().max(200, 'Company name too long'),
+  lastPrice: z.number().positive('Last price must be positive'),
+  open: z.number().positive('Open price must be positive'),
+  dayHigh: z.number().positive('Day high must be positive'),
+  dayLow: z.number().positive('Day low must be positive'),
+  previousClose: z.number().positive('Previous close must be positive'),
+  change: z.number(),
+  pChange: z.number(),
+  totalTradedVolume: z.number().nonnegative('Volume cannot be negative'),
+  yearHigh: z.number().positive('Year high must be positive'),
+  yearLow: z.number().positive('Year low must be positive'),
+  perChange30d: z.number(),
+  perChange365d: z.number(),
+});
+
+const RequestSchema = z.object({
+  stock: StockDataSchema,
+});
+
+type StockData = z.infer<typeof StockDataSchema>;
+// === END VALIDATION SCHEMAS ===
 
 interface PredictionResponse {
   trend: 'bullish' | 'bearish' | 'sideways';
@@ -73,14 +82,28 @@ serve(async (req) => {
     console.log(`Predict stock request from user: ${userId}`);
     // === END AUTHENTICATION CHECK ===
 
-    const { stock } = await req.json() as { stock: StockData };
-    
-    if (!stock || !stock.symbol) {
-      return new Response(
-        JSON.stringify({ error: 'Stock data is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // === INPUT VALIDATION ===
+    let validatedInput;
+    try {
+      const rawBody = await req.json();
+      validatedInput = RequestSchema.parse(rawBody);
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        const errorMessages = validationError.errors.map(e => `${e.path.join('.')}: ${e.message}`);
+        console.error('Validation failed:', errorMessages);
+        return new Response(
+          JSON.stringify({ 
+            error: 'Invalid stock data',
+            details: errorMessages
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      throw validationError;
     }
+
+    const { stock } = validatedInput;
+    // === END INPUT VALIDATION ===
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {

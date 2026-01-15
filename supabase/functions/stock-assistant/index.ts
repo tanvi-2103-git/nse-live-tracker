@@ -1,10 +1,65 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// === INPUT VALIDATION SCHEMAS ===
+const MessageSchema = z.object({
+  role: z.enum(['user', 'assistant', 'system']),
+  content: z.string().max(4000, 'Message content too long'),
+});
+
+const MarketOverviewSchema = z.object({
+  indexValue: z.number().optional(),
+  indexChange: z.number().optional(),
+  indexChangePercent: z.number().optional(),
+  advancers: z.number().nonnegative().optional(),
+  decliners: z.number().nonnegative().optional(),
+  unchanged: z.number().nonnegative().optional(),
+}).optional();
+
+const StockContextSchema = z.object({
+  symbol: z.string().max(20).optional(),
+  companyName: z.string().max(200).optional(),
+  lastPrice: z.number().positive().optional(),
+  change: z.number().optional(),
+  pChange: z.number().optional(),
+  dayHigh: z.number().positive().optional(),
+  dayLow: z.number().positive().optional(),
+  previousClose: z.number().positive().optional(),
+  totalTradedVolume: z.number().nonnegative().optional(),
+  totalTradedValue: z.number().optional(),
+  yearHigh: z.number().positive().optional(),
+  yearLow: z.number().positive().optional(),
+  perChange30d: z.number().optional(),
+  perChange365d: z.number().optional(),
+}).optional();
+
+const ResearchContextSchema = z.object({
+  verdict: z.any().optional(),
+  priceLevels: z.any().optional(),
+  technicalIndicators: z.any().optional(),
+  likelyOutcome: z.string().optional(),
+}).optional();
+
+const ContextSchema = z.object({
+  stock: StockContextSchema,
+  marketOverview: MarketOverviewSchema,
+  research: ResearchContextSchema,
+  marketState: z.string().max(50).optional(),
+  pageContext: z.string().max(100).optional(),
+}).optional();
+
+const RequestSchema = z.object({
+  question: z.string().min(1, 'Question is required').max(2000, 'Question too long (max 2000 chars)'),
+  context: ContextSchema,
+  conversationHistory: z.array(MessageSchema).max(20, 'Too many messages in history').optional(),
+});
+// === END VALIDATION SCHEMAS ===
 
 const SYSTEM_PROMPT = `You are a junior equity research analyst at an institutional investment firm, specializing in the Indian stock market (NSE/BSE).
 
@@ -102,14 +157,28 @@ serve(async (req) => {
     console.log(`Stock assistant request from user: ${userId}`);
     // === END AUTHENTICATION CHECK ===
 
-    const { question, context, conversationHistory } = await req.json();
-
-    if (!question || typeof question !== 'string') {
-      return new Response(
-        JSON.stringify({ error: 'Question is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // === INPUT VALIDATION ===
+    let validatedInput;
+    try {
+      const rawBody = await req.json();
+      validatedInput = RequestSchema.parse(rawBody);
+    } catch (validationError) {
+      if (validationError instanceof z.ZodError) {
+        const errorMessages = validationError.errors.map(e => `${e.path.join('.')}: ${e.message}`);
+        console.error('Validation failed:', errorMessages);
+        return new Response(
+          JSON.stringify({ 
+            error: 'Invalid request data',
+            details: errorMessages
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      throw validationError;
     }
+
+    const { question, context, conversationHistory } = validatedInput;
+    // === END INPUT VALIDATION ===
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -125,7 +194,7 @@ serve(async (req) => {
       // MARKET CONTEXT - Critical for relative analysis
       if (context.marketOverview) {
         const m = context.marketOverview;
-        const indexDirection = m.indexChangePercent >= 0 ? 'positive' : 'negative';
+        const indexDirection = (m.indexChangePercent ?? 0) >= 0 ? 'positive' : 'negative';
         const breadthRatio = m.advancers && m.decliners 
           ? (m.advancers / (m.advancers + m.decliners) * 100).toFixed(1)
           : null;
@@ -139,18 +208,18 @@ serve(async (req) => {
         }
 
         let volatilityState = 'Normal';
-        if (Math.abs(m.indexChangePercent) > 2) volatilityState = 'Elevated';
-        if (Math.abs(m.indexChangePercent) > 3) volatilityState = 'High';
+        if (Math.abs(m.indexChangePercent ?? 0) > 2) volatilityState = 'Elevated';
+        if (Math.abs(m.indexChangePercent ?? 0) > 3) volatilityState = 'High';
 
         contextParts.push(`=== MARKET ENVIRONMENT ===
 Index: Nifty 50
-Value: ${m.indexValue?.toLocaleString('en-IN')}
-Day Change: ${m.indexChange >= 0 ? '+' : ''}${m.indexChange?.toFixed(2)} (${m.indexChangePercent >= 0 ? '+' : ''}${m.indexChangePercent?.toFixed(2)}%)
+Value: ${m.indexValue?.toLocaleString('en-IN') ?? 'N/A'}
+Day Change: ${(m.indexChange ?? 0) >= 0 ? '+' : ''}${m.indexChange?.toFixed(2) ?? 'N/A'} (${(m.indexChangePercent ?? 0) >= 0 ? '+' : ''}${m.indexChangePercent?.toFixed(2) ?? 'N/A'}%)
 Direction: ${indexDirection.toUpperCase()}
-Breadth: ${m.advancers || 'N/A'} advancers | ${m.decliners || 'N/A'} decliners | ${m.unchanged || 'N/A'} unchanged
+Breadth: ${m.advancers ?? 'N/A'} advancers | ${m.decliners ?? 'N/A'} decliners | ${m.unchanged ?? 'N/A'} unchanged
 Breadth Interpretation: ${marketBreadthDesc}
 Volatility: ${volatilityState}
-Session: ${context.marketState || 'Unknown'}
+Session: ${context.marketState ?? 'Unknown'}
 
 >>> USE THIS TO FRAME ALL ANALYSIS <<<`);
       } else {
@@ -167,7 +236,7 @@ Note: Relative performance cannot be fully assessed without index data.`);
         let relativePerf = 'Cannot calculate (no index data)';
         let alpha = 0;
         if (context.marketOverview?.indexChangePercent !== undefined) {
-          alpha = (s.pChange || 0) - context.marketOverview.indexChangePercent;
+          alpha = (s.pChange ?? 0) - context.marketOverview.indexChangePercent;
           if (alpha > 1.5) relativePerf = `OUTPERFORMING index by ${alpha.toFixed(2)}% (strong relative strength)`;
           else if (alpha > 0.5) relativePerf = `Slightly outperforming index (+${alpha.toFixed(2)}%)`;
           else if (alpha > -0.5) relativePerf = `In-line with index (alpha: ${alpha >= 0 ? '+' : ''}${alpha.toFixed(2)}%)`;
@@ -180,43 +249,43 @@ Note: Relative performance cannot be fully assessed without index data.`);
           ? ((s.lastPrice - s.yearLow) / (s.yearHigh - s.yearLow) * 100).toFixed(1)
           : null;
         
-        contextParts.push(`=== STOCK DATA: ${s.symbol} ===
-Company: ${s.companyName}
-Current Price: ₹${s.lastPrice?.toLocaleString('en-IN')}
-Day Change: ${s.change >= 0 ? '+' : ''}${s.change?.toFixed(2)} (${s.pChange >= 0 ? '+' : ''}${s.pChange?.toFixed(2)}%)
+        contextParts.push(`=== STOCK DATA: ${s.symbol ?? 'Unknown'} ===
+Company: ${s.companyName ?? 'N/A'}
+Current Price: ₹${s.lastPrice?.toLocaleString('en-IN') ?? 'N/A'}
+Day Change: ${(s.change ?? 0) >= 0 ? '+' : ''}${s.change?.toFixed(2) ?? 'N/A'} (${(s.pChange ?? 0) >= 0 ? '+' : ''}${s.pChange?.toFixed(2) ?? 'N/A'}%)
 
 RELATIVE PERFORMANCE: ${relativePerf}
 
-Price Range Today: ₹${s.dayLow} - ₹${s.dayHigh}
-52-Week Range: ₹${s.yearLow} - ₹${s.yearHigh}
+Price Range Today: ₹${s.dayLow ?? 'N/A'} - ₹${s.dayHigh ?? 'N/A'}
+52-Week Range: ₹${s.yearLow ?? 'N/A'} - ₹${s.yearHigh ?? 'N/A'}
 ${weekPos ? `52-Week Position: ${weekPos}% above yearly low` : ''}
 
-Volume: ${s.totalTradedVolume?.toLocaleString('en-IN')} shares
-Value Traded: ₹${s.totalTradedValue?.toFixed(2)} Cr
+Volume: ${s.totalTradedVolume?.toLocaleString('en-IN') ?? 'N/A'} shares
+Value Traded: ₹${s.totalTradedValue?.toFixed(2) ?? 'N/A'} Cr
 
-30-Day Performance: ${s.perChange30d >= 0 ? '+' : ''}${s.perChange30d?.toFixed(2)}%
-365-Day Performance: ${s.perChange365d >= 0 ? '+' : ''}${s.perChange365d?.toFixed(2)}%`);
+30-Day Performance: ${(s.perChange30d ?? 0) >= 0 ? '+' : ''}${s.perChange30d?.toFixed(2) ?? 'N/A'}%
+365-Day Performance: ${(s.perChange365d ?? 0) >= 0 ? '+' : ''}${s.perChange365d?.toFixed(2) ?? 'N/A'}%`);
       }
 
       // AI RESEARCH DATA
       if (context.research) {
         const r = context.research;
         contextParts.push(`=== AI RESEARCH FINDINGS ===
-Verdict: ${r.verdict?.trend || 'N/A'} (${r.verdict?.outlookHorizon || 'N/A'})
-Analyst Bias: ${r.verdict?.analystBias || 'N/A'}
-Confidence: ${r.verdict?.confidencePercent || 'N/A'}%
-Reasoning: ${r.verdict?.reasoningSentence || 'N/A'}
+Verdict: ${r.verdict?.trend ?? 'N/A'} (${r.verdict?.outlookHorizon ?? 'N/A'})
+Analyst Bias: ${r.verdict?.analystBias ?? 'N/A'}
+Confidence: ${r.verdict?.confidencePercent ?? 'N/A'}%
+Reasoning: ${r.verdict?.reasoningSentence ?? 'N/A'}
 
-Support Level: ₹${r.priceLevels?.support || 'N/A'}
-Resistance Level: ₹${r.priceLevels?.resistance || 'N/A'}
-Trend Strength: ${r.priceLevels?.trendStrength || 'N/A'}
+Support Level: ₹${r.priceLevels?.support ?? 'N/A'}
+Resistance Level: ₹${r.priceLevels?.resistance ?? 'N/A'}
+Trend Strength: ${r.priceLevels?.trendStrength ?? 'N/A'}
 
 Technical Indicators:
-- RSI: ${r.technicalIndicators?.rsiStatus || 'N/A'} — ${r.technicalIndicators?.rsiReasoning || ''}
-- MACD: ${r.technicalIndicators?.macdSignal || 'N/A'} — ${r.technicalIndicators?.macdReasoning || ''}
-- Overall Bias: ${r.technicalIndicators?.overallBias || 'N/A'}
+- RSI: ${r.technicalIndicators?.rsiStatus ?? 'N/A'} — ${r.technicalIndicators?.rsiReasoning ?? ''}
+- MACD: ${r.technicalIndicators?.macdSignal ?? 'N/A'} — ${r.technicalIndicators?.macdReasoning ?? ''}
+- Overall Bias: ${r.technicalIndicators?.overallBias ?? 'N/A'}
 
-Likely Outcome: ${r.likelyOutcome || 'N/A'}
+Likely Outcome: ${r.likelyOutcome ?? 'N/A'}
 
 >>> ALIGN YOUR EXPLANATIONS WITH THIS RESEARCH <<<`);
       }
@@ -231,7 +300,7 @@ Likely Outcome: ${r.likelyOutcome || 'N/A'}
       { role: 'system', content: SYSTEM_PROMPT }
     ];
 
-    // Add conversation history (last 8 messages for focused context)
+    // Add conversation history (already validated and limited to max 20)
     if (conversationHistory && Array.isArray(conversationHistory)) {
       const recentHistory = conversationHistory.slice(-8);
       messages.push(...recentHistory);

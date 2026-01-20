@@ -51,36 +51,32 @@ serve(async (req) => {
   }
 
   try {
-    // === AUTHENTICATION CHECK ===
+    // === OPTIONAL AUTHENTICATION ===
+    // This endpoint works for both authenticated and anonymous users
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized - Authentication required' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    let userId: string | null = null;
     
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
+    if (authHeader?.startsWith('Bearer ')) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+      
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    
-    if (claimsError || !claimsData?.claims) {
-      console.error('Auth validation failed:', claimsError);
-      return new Response(
-        JSON.stringify({ error: 'Invalid or expired token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      const token = authHeader.replace('Bearer ', '');
+      const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+      
+      if (!claimsError && claimsData?.claims) {
+        userId = claimsData.claims.sub as string;
+        console.log(`Predict stock request from authenticated user: ${userId}`);
+      } else {
+        console.log('Predict stock request from anonymous user (invalid token provided)');
+      }
+    } else {
+      console.log('Predict stock request from anonymous user');
     }
-
-    const userId = claimsData.claims.sub;
-    console.log(`Predict stock request from user: ${userId}`);
-    // === END AUTHENTICATION CHECK ===
+    // === END OPTIONAL AUTHENTICATION ===
 
     // === INPUT VALIDATION ===
     let validatedInput;

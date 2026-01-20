@@ -44,14 +44,14 @@ const ResearchContextSchema = z.object({
   trend: z.string().optional(),
   momentum: z.any().optional(),
   technicalIndicators: z.any().optional(),
-}).optional();
+}).optional().nullable();
 
 const ContextSchema = z.object({
-  stock: StockContextSchema,
-  marketOverview: MarketOverviewSchema,
-  research: ResearchContextSchema,
-  marketState: z.string().max(50).optional(),
-  pageContext: z.string().max(100).optional(),
+  stock: StockContextSchema.nullable(),
+  marketOverview: MarketOverviewSchema.nullable(),
+  research: ResearchContextSchema.nullable(),
+  marketState: z.string().max(50).optional().nullable(),
+  pageContext: z.string().max(100).optional().nullable(),
 }).optional();
 
 const RequestSchema = z.object({

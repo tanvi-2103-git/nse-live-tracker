@@ -1,4 +1,5 @@
-import { TrendingUp, Activity, Clock, RefreshCw, Briefcase } from 'lucide-react';
+import { Activity, Clock, RefreshCw, Briefcase } from 'lucide-react';
+import bullIcon from '@/assets/bull-icon.webp';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { UserMenu } from './UserMenu';

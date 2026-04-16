@@ -1,4 +1,5 @@
-import { TrendingUp, Activity, Clock, RefreshCw, Briefcase } from 'lucide-react';
+import { Activity, Clock, RefreshCw, Briefcase } from 'lucide-react';
+import bullIcon from '@/assets/bull-icon.webp';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { UserMenu } from './UserMenu';
@@ -58,8 +59,8 @@ export function Header({
           {/* Logo & Title */}
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-primary-foreground" />
+              <div className="w-10 h-10 rounded-xl overflow-hidden bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+                <img src={bullIcon} alt="NSE Dashboard" className="w-10 h-10 object-cover" />
               </div>
               {marketSession === 'OPEN' && (
                 <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-gain pulse-live" />

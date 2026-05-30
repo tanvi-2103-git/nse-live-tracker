@@ -231,7 +231,7 @@ Real-time NSE market overview with NIFTY, SENSEX, BANKNIFTY, market breadth, gai
 
 ## 📈 Stock Analysis
 
-![Stock Analysis](./public/Stock Analysis.png)
+![Stock Analysis](./public/StockAnalysis.png)
 
 Detailed stock analytics including intraday movement, volume analysis, trend monitoring, day range, and performance metrics.
 
@@ -239,7 +239,7 @@ Detailed stock analytics including intraday movement, volume analysis, trend mon
 
 ## 🤖 AI Equity Research Engine
 
-![AI Research Engine](./public/AI Engine.png)
+![AI Research Engine](./public/AIEngine.png)
 
 AI-powered institutional-grade equity research system generating market intelligence and technical insights.
 
@@ -247,7 +247,7 @@ AI-powered institutional-grade equity research system generating market intellig
 
 ## 📑 Research Verdict
 
-![Research Verdict](./public/research verdict.png)
+![Research Verdict](./public/researchVerdict.png)
 
 Technical analysis dashboard with confidence scoring, RSI, MACD, moving averages, support/resistance detection, and market sentiment evaluation.
 

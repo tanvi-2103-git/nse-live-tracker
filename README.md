@@ -1,73 +1,276 @@
-# Welcome to your Lovable project
+# 📈 NSE Live Tracker
 
-## Project info
+Enterprise-grade stock market intelligence platform for Indian equities featuring real-time market monitoring, AI-powered research, portfolio management, technical analysis, watchlists, alerts, and institutional-style reporting.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+🔗 **Live Demo:** https://nse-live-tracker.vercel.app
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+# 🚀 Overview
 
-**Use Lovable**
+NSE Live Tracker is a modern stock market analytics platform built for tracking and analyzing Indian equity markets in real time.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+The platform provides live market insights, AI-generated stock research, portfolio management, watchlists, technical indicators, alerts, and institutional-style analysis dashboards through a responsive and production-grade user interface.
 
-Changes made via Lovable will be committed automatically to this repo.
+Designed with scalability and performance in mind, the application combines real-time market visualization with AI-powered decision support systems.
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+# ✨ Features
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 📊 Real-Time Market Dashboard
 
-Follow these steps:
+- Live NIFTY 50 market monitoring
+- Market breadth visualization
+- Top gainers and losers tracking
+- Live stock performance metrics
+- Volume and trend monitoring
+- Interactive market overview
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 📈 Stock Analytics
 
-# Step 3: Install the necessary dependencies.
-npm i
+- Intraday stock movement tracking
+- Day high and low analysis
+- Volume analysis
+- Historical performance metrics
+- 52-week range visualization
+- Technical trend indicators
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+---
+
+## 🤖 AI-Powered Equity Research
+
+- AI-generated stock analysis
+- Confidence-based research verdicts
+- Technical indicator interpretation
+- RSI analysis
+- MACD analysis
+- Moving average analysis
+- Support and resistance detection
+- Market sentiment evaluation
+
+---
+
+## 💼 Portfolio Management
+
+- Portfolio tracking
+- Asset monitoring
+- Performance insights
+- Profit and loss calculations
+- Holdings management
+
+---
+
+## ⭐ Watchlists
+
+- Custom stock watchlists
+- Favorite stock tracking
+- Quick stock access
+- Personalized monitoring
+
+---
+
+## 🔔 Smart Alerts
+
+- Price alert creation
+- Notification management
+- Custom trigger conditions
+- Market event tracking
+
+---
+
+## 💬 AI Stock Assistant
+
+- Context-aware stock assistant
+- Market-related Q&A
+- Stock-specific insights
+- AI-powered guidance
+
+---
+
+## 📄 Research Reports
+
+- Institutional-style reports
+- Downloadable analysis reports
+- Technical research summaries
+- Market intelligence insights
+
+---
+
+## 🔐 Authentication & User Management
+
+- Secure authentication
+- User-specific portfolios
+- Personalized watchlists
+- Protected routes
+- Session management
+
+---
+
+# 🛠️ Tech Stack
+
+## Frontend
+
+- React.js
+- TypeScript
+- Tailwind CSS
+- Recharts
+- React Router
+
+## Backend
+
+- Supabase
+- Edge Functions
+- REST APIs
+
+## Database
+
+- PostgreSQL
+
+## AI Integration
+
+- Gemini AI
+
+## Deployment
+
+- Vercel
+
+---
+
+# 🏗️ Architecture
+
+```text
+User
+ │
+ ▼
+React + TypeScript Frontend
+ │
+ ├── Market Dashboard
+ ├── Portfolio Module
+ ├── Watchlist Module
+ ├── AI Research Module
+ ├── Alerts System
+ └── Authentication
+ │
+ ▼
+Supabase Backend
+ │
+ ├── PostgreSQL Database
+ ├── Authentication
+ ├── Edge Functions
+ └── Realtime Services
+ │
+ ▼
+Gemini AI
+ │
+ ├── Research Analysis
+ ├── Technical Insights
+ ├── Stock Assistant
+ └── Report Generation
+```
+
+---
+
+# ⚙️ Installation
+
+## Clone Repository
+
+```bash
+git clone https://github.com/tanvi-2103-git/nse-live-tracker.git
+```
+
+## Navigate to Project
+
+```bash
+cd nse-live-tracker
+```
+
+## Install Dependencies
+
+```bash
+npm install
+```
+
+## Configure Environment Variables
+
+Create a `.env` file:
+
+```env
+VITE_SUPABASE_URL=your_supabase_url
+
+VITE_SUPABASE_ANON_KEY=your_supabase_key
+
+VITE_GEMINI_API_KEY=your_gemini_api_key
+```
+
+## Run Development Server
+
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Application will run on:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+http://localhost:5173
+```
 
-**Use GitHub Codespaces**
+---
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+# 📷 Screenshots
 
-## What technologies are used for this project?
+## 📊 Market Dashboard
 
-This project is built with:
+![Market Dashboard](./public/marketPorfolio.png)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Real-time NSE market overview with NIFTY, SENSEX, BANKNIFTY, market breadth, gainers, losers, watchlists, and alerts.
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## 📈 Stock Analysis
 
-## Can I connect a custom domain to my Lovable project?
+![Stock Analysis](./public/Stock Analysis.png)
 
-Yes, you can!
+Detailed stock analytics including intraday movement, volume analysis, trend monitoring, day range, and performance metrics.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## 🤖 AI Equity Research Engine
+
+![AI Research Engine](./public/AI Engine.png)
+
+AI-powered institutional-grade equity research system generating market intelligence and technical insights.
+
+---
+
+## 📑 Research Verdict
+
+![Research Verdict](./public/research verdict.png)
+
+Technical analysis dashboard with confidence scoring, RSI, MACD, moving averages, support/resistance detection, and market sentiment evaluation.
+
+---
+
+
+# 🎯 Key Highlights
+
+- Real-time stock market intelligence platform
+- AI-powered equity research engine
+- Institutional-grade analytics interface
+- Portfolio and watchlist management
+- Technical analysis automation
+- Scalable Supabase architecture
+- Responsive modern UI
+- Production-ready deployment
+
+---
+
+# 👨‍💻 Author
+
+### Tanvi Dudam
+
+- Portfolio: https://tanvi-dudam-portfolio.vercel.app
+- LinkedIn: https://www.linkedin.com/in/tanvi-dudam/
+- Email: tanvidudam2003@gmail.com
